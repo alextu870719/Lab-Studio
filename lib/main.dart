@@ -150,6 +150,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
   
   
   final Map<String, bool> _reagentInclusionStatus = {}; // New map to manage inclusion status
+  bool _isEditMode = false;
 
   final List<Reagent> _reagents = [
     Reagent(name: '5X Q5 Reaction Buffer', proportion: 5.0 / 25.0),
@@ -603,32 +604,203 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
               ),
             ),
             const SizedBox(height: 16),
-            Text(
-              'Calculated Volumes',
-              style: Theme.of(context).textTheme.headlineSmall,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Reagent Components',
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      _isEditMode = !_isEditMode;
+                    });
+                  },
+                  child: Text(_isEditMode ? 'Done' : 'Edit'),
+                ),
+              ],
             ),
             const SizedBox(height: 8),
+            // Header Row for the table
+            if (!_isEditMode)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                child: Row(
+                  children: [
+                    Expanded(flex: 3, child: Text('Component', style: Theme.of(context).textTheme.titleSmall)),
+                    Expanded(flex: 2, child: Text('Volume/Rxn (µl)', textAlign: TextAlign.center, style: Theme.of(context).textTheme.titleSmall)),
+                    Expanded(flex: 2, child: Text('Total (µl)', textAlign: TextAlign.end, style: Theme.of(context).textTheme.titleSmall)),
+                  ],
+                ),
+              ),
             Expanded(
-              child: _calculatedTotalVolumes.isEmpty
-                  ? const Center(
-                      child: Text('Enter parameters above to calculate volumes'),
-                    )
-                  : ListView.builder(
-                      itemCount: _calculatedTotalVolumes.length,
-                      itemBuilder: (context, index) {
-                        final entry = _calculatedTotalVolumes.entries.elementAt(index);
-                        return Card(
-                          child: ListTile(
-                            title: Text(entry.key),
-                            trailing: Text(
-                              '${formatVolume(entry.value)} µl',
-                              style: Theme.of(context).textTheme.titleMedium,
-                            ),
-                          ),
-                        );
+              child: ListView.builder(
+                itemCount: _reagents.length,
+                itemBuilder: (context, index) {
+                  final reagent = _reagents[index];
+                  final double? totalNeededVolume = _calculatedTotalVolumes[reagent.name];
+                  
+                  if (totalNeededVolume == null) {
+                    return Container(); // Don't display reagents not in calculations
+                  }
+
+                  final int numReactions = int.tryParse(_numReactionsController.text) ?? 1;
+                  final double singleReactionVolume = numReactions > 0 ? totalNeededVolume / numReactions : 0.0;
+
+                  Widget componentNameWidget;
+                  Widget singleRxnVolumeWidget;
+
+                  if (_isEditMode && !reagent.isVariable) {
+                    componentNameWidget = TextField(
+                      controller: TextEditingController(text: reagent.name),
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0),
+                      ),
+                      onChanged: (value) {
+                        setState(() {
+                          _reagents[index] = reagent.copyWith(name: value);
+                          _calculateVolumes();
+                        });
                       },
+                    );
+
+                    final double totalReactionVolume = double.tryParse(_customReactionVolumeController.text) ?? 25.0;
+                    singleRxnVolumeWidget = Expanded(
+                      flex: 2,
+                      child: TextField(
+                        controller: TextEditingController(text: (reagent.proportion * totalReactionVolume).toStringAsFixed(2)),
+                        decoration: const InputDecoration(
+                          border: OutlineInputBorder(),
+                          contentPadding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0),
+                        ),
+                        keyboardType: TextInputType.number,
+                        textAlign: TextAlign.center,
+                        onChanged: (value) {
+                          final double? newVolume = double.tryParse(value);
+                          if (newVolume != null && totalReactionVolume > 0) {
+                            setState(() {
+                              _reagents[index] = reagent.copyWith(proportion: newVolume / totalReactionVolume);
+                              _calculateVolumes();
+                            });
+                          }
+                        },
+                      ),
+                    );
+                  } else {
+                    componentNameWidget = Text(
+                      reagent.name,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    );
+
+                    singleRxnVolumeWidget = Expanded(
+                      flex: 2,
+                      child: reagent.isVariable
+                          ? TextField(
+                              controller: _templateDnaVolumeController,
+                              decoration: const InputDecoration(
+                                hintText: 'Enter volume',
+                                border: OutlineInputBorder(),
+                                contentPadding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0),
+                              ),
+                              keyboardType: TextInputType.number,
+                              textAlign: TextAlign.center,
+                              onChanged: (value) => _calculateVolumes(),
+                            )
+                          : Text(
+                              formatVolume(singleReactionVolume),
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                    );
+                  }
+
+                  return GestureDetector(
+                    onTap: () {
+                      if (_isEditMode && reagent.isOptional) {
+                        setState(() {
+                          _reagentInclusionStatus[reagent.name] = !(_reagentInclusionStatus[reagent.name] ?? false);
+                          _calculateVolumes();
+                        });
+                      }
+                    },
+                    child: Card(
+                      margin: const EdgeInsets.symmetric(vertical: 4.0),
+                      elevation: 1,
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Column(
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(flex: 3, child: componentNameWidget),
+                                singleRxnVolumeWidget,
+                                Expanded(
+                                  flex: 2,
+                                  child: Text(
+                                    formatVolume(totalNeededVolume),
+                                    textAlign: TextAlign.end,
+                                    style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Colors.blueGrey[700]),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (_isEditMode && reagent.isOptional)
+                              Row(
+                                children: [
+                                  Checkbox(
+                                    value: _reagentInclusionStatus[reagent.name] ?? false,
+                                    onChanged: (bool? value) {
+                                      setState(() {
+                                        _reagentInclusionStatus[reagent.name] = value ?? false;
+                                        _calculateVolumes();
+                                      });
+                                    },
+                                  ),
+                                  const Text('Include in calculation'),
+                                ],
+                              ),
+                            if (_isEditMode && !reagent.isVariable && index < _reagents.length - 1)
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.delete, color: Colors.red),
+                                    onPressed: () {
+                                      setState(() {
+                                        _reagents.removeAt(index);
+                                        _calculateVolumes();
+                                      });
+                                    },
+                                  ),
+                                ],
+                              ),
+                          ],
+                        ),
+                      ),
                     ),
+                  );
+                },
+              ),
             ),
+            if (_isEditMode)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16.0),
+                child: ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      _reagents.insert(_reagents.length - 1, // Insert before water
+                        Reagent(
+                          name: 'New Reagent',
+                          proportion: 0.0,
+                        ),
+                      );
+                    });
+                  },
+                  child: const Text('Add New Reagent'),
+                ),
+              ),
           ],
         ),
       ),

@@ -22,17 +22,19 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   bool _isDarkMode = false;
+  bool _isExperimentTrackingMode = false;
 
   @override
   void initState() {
     super.initState();
-    _loadThemePreference();
+    _loadPreferences();
   }
 
-  Future<void> _loadThemePreference() async {
+  Future<void> _loadPreferences() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       _isDarkMode = prefs.getBool('isDarkMode') ?? false;
+      _isExperimentTrackingMode = prefs.getBool('isExperimentTrackingMode') ?? false;
     });
   }
 
@@ -42,6 +44,14 @@ class _MyAppState extends State<MyApp> {
       _isDarkMode = !_isDarkMode;
     });
     await prefs.setBool('isDarkMode', _isDarkMode);
+  }
+
+  Future<void> _toggleExperimentTracking() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _isExperimentTrackingMode = !_isExperimentTrackingMode;
+    });
+    await prefs.setBool('isExperimentTrackingMode', _isExperimentTrackingMode);
   }
 
   @override
@@ -58,6 +68,8 @@ class _MyAppState extends State<MyApp> {
       home: PcrCalculatorPage(
         onToggleTheme: _toggleTheme,
         isDarkMode: _isDarkMode,
+        onToggleExperimentTracking: _toggleExperimentTracking,
+        isExperimentTrackingMode: _isExperimentTrackingMode,
       ),
     );
   }
@@ -153,11 +165,15 @@ class PcrConfiguration {
 class PcrCalculatorPage extends StatefulWidget {
   final VoidCallback onToggleTheme;
   final bool isDarkMode;
+  final VoidCallback onToggleExperimentTracking;
+  final bool isExperimentTrackingMode;
 
   const PcrCalculatorPage({
     super.key,
     required this.onToggleTheme,
     required this.isDarkMode,
+    required this.onToggleExperimentTracking,
+    required this.isExperimentTrackingMode,
   });
 
   @override
@@ -171,6 +187,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
 
   Map<String, double> _calculatedTotalVolumes = {};
   final Map<String, bool> _reagentInclusionStatus = {};
+  final Map<String, bool> _reagentAddedStatus = {}; // 追蹤哪些試劑已加入實驗
   bool _isEditMode = false;
   bool _hasVolumeError = false;
   String _currentConfigurationName = 'Default Configuration';
@@ -197,6 +214,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
     super.initState();
     _initializeEditControllers();
     _initializeReagentInclusionStatus();
+    _initializeReagentAddedStatus();
     _calculateVolumes();
   }
 
@@ -206,6 +224,13 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
       if (reagent.isOptional) {
         _reagentInclusionStatus[reagent.name] ??= true;
       }
+    }
+  }
+
+  void _initializeReagentAddedStatus() {
+    // 初始化實驗追蹤狀態，預設所有試劑都未加入
+    for (var reagent in _reagents) {
+      _reagentAddedStatus[reagent.name] ??= false;
     }
   }
 
@@ -335,6 +360,8 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
         return SettingsPage(
           isDarkMode: widget.isDarkMode,
           onToggleTheme: widget.onToggleTheme,
+          isExperimentTrackingMode: widget.isExperimentTrackingMode,
+          onToggleExperimentTracking: widget.onToggleExperimentTracking,
         );
       },
     );
@@ -384,7 +411,9 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
     setState(() {
       _calculatedTotalVolumes.clear();
       _reagentInclusionStatus.clear();
+      _reagentAddedStatus.clear();
       _initializeReagentInclusionStatus();
+      _initializeReagentAddedStatus();
       // Recalculate volumes to show the cleared results
       _calculateVolumes();
     });
@@ -650,6 +679,30 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
     
     return Row(
       children: [
+        // 實驗追蹤模式的 checkbox（當模式開啟時顯示）
+        if (widget.isExperimentTrackingMode) ...[
+          Transform.scale(
+            scale: 0.8,
+            child: CupertinoButton(
+              padding: EdgeInsets.zero,
+              onPressed: () {
+                setState(() {
+                  _reagentAddedStatus[reagent.name] = !(_reagentAddedStatus[reagent.name] ?? false);
+                });
+              },
+              child: Icon(
+                (_reagentAddedStatus[reagent.name] ?? false) 
+                    ? CupertinoIcons.checkmark_square_fill 
+                    : CupertinoIcons.square,
+                color: (_reagentAddedStatus[reagent.name] ?? false) 
+                    ? CupertinoColors.systemGreen 
+                    : (widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
+                size: 22,
+              ),
+            ),
+          ),
+          const SizedBox(width: 4),
+        ],
         // Optional 開關（只對 optional 試劑顯示，使用較小的尺寸）
         if (reagent.isOptional) ...[
           Transform.scale(
@@ -825,6 +878,9 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
       // Add new controllers for the added reagent
       _reagentNameControllers.add(TextEditingController(text: newReagentName));
       _reagentVolumeControllers.add(TextEditingController(text: '1.0'));
+      
+      // 初始化新試劑的追蹤狀態
+      _reagentAddedStatus[newReagentName] = false;
       
       _calculateVolumes();
     });
@@ -1609,11 +1665,15 @@ class _ConfigurationSelectorState extends State<ConfigurationSelector> {
 class SettingsPage extends StatelessWidget {
   final bool isDarkMode;
   final VoidCallback onToggleTheme;
+  final bool isExperimentTrackingMode;
+  final VoidCallback onToggleExperimentTracking;
 
   const SettingsPage({
     super.key,
     required this.isDarkMode,
     required this.onToggleTheme,
+    required this.isExperimentTrackingMode,
+    required this.onToggleExperimentTracking,
   });
 
   @override
@@ -1736,6 +1796,83 @@ class SettingsPage extends StatelessWidget {
                               value: isDarkMode,
                               onChanged: (value) {
                                 onToggleTheme();
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // 實驗追蹤模式設定卡片
+                Container(
+                  decoration: BoxDecoration(
+                    color: isDarkMode 
+                        ? CupertinoColors.systemGrey5.darkColor
+                        : CupertinoColors.tertiarySystemBackground,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    children: [
+                      // 實驗追蹤模式切換項目
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        child: Row(
+                          children: [
+                            // 圖示
+                            Container(
+                              width: 32,
+                              height: 32,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    CupertinoColors.systemGreen,
+                                    CupertinoColors.systemTeal,
+                                  ],
+                                ),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Icon(
+                                isExperimentTrackingMode 
+                                    ? CupertinoIcons.checkmark_square_fill 
+                                    : CupertinoIcons.square,
+                                color: CupertinoColors.white,
+                                size: 18,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            // 標題和描述
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Experiment Tracking',
+                                    style: TextStyle(
+                                      fontSize: 17,
+                                      fontWeight: FontWeight.w600,
+                                      color: isDarkMode ? CupertinoColors.white : CupertinoColors.black,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    isExperimentTrackingMode ? 'Track reagent addition' : 'Disabled',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: isDarkMode ? CupertinoColors.white : CupertinoColors.secondaryLabel,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            // 切換開關
+                            CupertinoSwitch(
+                              value: isExperimentTrackingMode,
+                              onChanged: (value) {
+                                onToggleExperimentTracking();
                               },
                             ),
                           ],

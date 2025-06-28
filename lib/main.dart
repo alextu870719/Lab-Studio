@@ -23,6 +23,7 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   bool _isDarkMode = false;
   bool _isExperimentTrackingMode = false;
+  int _trackingDisplayMode = 0; // 0: checkbox, 1: strikethrough
 
   @override
   void initState() {
@@ -35,6 +36,7 @@ class _MyAppState extends State<MyApp> {
     setState(() {
       _isDarkMode = prefs.getBool('isDarkMode') ?? false;
       _isExperimentTrackingMode = prefs.getBool('isExperimentTrackingMode') ?? false;
+      _trackingDisplayMode = prefs.getInt('trackingDisplayMode') ?? 0;
     });
   }
 
@@ -54,6 +56,14 @@ class _MyAppState extends State<MyApp> {
     await prefs.setBool('isExperimentTrackingMode', _isExperimentTrackingMode);
   }
 
+  Future<void> _setTrackingDisplayMode(int mode) async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _trackingDisplayMode = mode;
+    });
+    await prefs.setInt('trackingDisplayMode', _trackingDisplayMode);
+  }
+
   @override
   Widget build(BuildContext context) {
     return CupertinoApp(
@@ -70,6 +80,8 @@ class _MyAppState extends State<MyApp> {
         isDarkMode: _isDarkMode,
         onToggleExperimentTracking: _toggleExperimentTracking,
         isExperimentTrackingMode: _isExperimentTrackingMode,
+        trackingDisplayMode: _trackingDisplayMode,
+        onSetTrackingDisplayMode: _setTrackingDisplayMode,
       ),
     );
   }
@@ -167,6 +179,8 @@ class PcrCalculatorPage extends StatefulWidget {
   final bool isDarkMode;
   final VoidCallback onToggleExperimentTracking;
   final bool isExperimentTrackingMode;
+  final int trackingDisplayMode;
+  final Function(int) onSetTrackingDisplayMode;
 
   const PcrCalculatorPage({
     super.key,
@@ -174,6 +188,8 @@ class PcrCalculatorPage extends StatefulWidget {
     required this.isDarkMode,
     required this.onToggleExperimentTracking,
     required this.isExperimentTrackingMode,
+    required this.trackingDisplayMode,
+    required this.onSetTrackingDisplayMode,
   });
 
   @override
@@ -362,6 +378,8 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
           onToggleTheme: widget.onToggleTheme,
           isExperimentTrackingMode: widget.isExperimentTrackingMode,
           onToggleExperimentTracking: widget.onToggleExperimentTracking,
+          trackingDisplayMode: widget.trackingDisplayMode,
+          onSetTrackingDisplayMode: widget.onSetTrackingDisplayMode,
         );
       },
     );
@@ -679,8 +697,8 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
     
     return Row(
       children: [
-        // 實驗追蹤模式的 checkbox（當模式開啟時顯示）
-        if (widget.isExperimentTrackingMode) ...[
+        // 實驗追蹤模式的 checkbox（當模式開啟且顯示模式為 checkbox 時顯示）
+        if (widget.isExperimentTrackingMode && widget.trackingDisplayMode == 0) ...[
           Transform.scale(
             scale: 0.8,
             child: CupertinoButton(
@@ -721,12 +739,30 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
         ],
         Expanded(
           flex: 3,
-          child: Text(
-            reagent.name + (reagent.isOptional ? ' (Optional)' : ''),
-            style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
-              color: reagent.isOptional && !isIncluded 
-                  ? CupertinoColors.secondaryLabel 
-                  : (widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
+          child: GestureDetector(
+            onTap: widget.isExperimentTrackingMode && widget.trackingDisplayMode == 1 
+                ? () {
+                    setState(() {
+                      _reagentAddedStatus[reagent.name] = !(_reagentAddedStatus[reagent.name] ?? false);
+                    });
+                  }
+                : null,
+            child: Text(
+              reagent.name + (reagent.isOptional ? ' (Optional)' : ''),
+              style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
+                color: reagent.isOptional && !isIncluded 
+                    ? CupertinoColors.secondaryLabel 
+                    : (widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
+                decoration: (widget.isExperimentTrackingMode && 
+                           widget.trackingDisplayMode == 1 && 
+                           (_reagentAddedStatus[reagent.name] ?? false))
+                    ? TextDecoration.lineThrough 
+                    : null,
+                decorationColor: widget.isDarkMode 
+                    ? CupertinoColors.white 
+                    : CupertinoColors.black,
+                decorationThickness: 2.0,
+              ),
             ),
           ),
         ),
@@ -1667,6 +1703,8 @@ class SettingsPage extends StatelessWidget {
   final VoidCallback onToggleTheme;
   final bool isExperimentTrackingMode;
   final VoidCallback onToggleExperimentTracking;
+  final int trackingDisplayMode;
+  final Function(int) onSetTrackingDisplayMode;
 
   const SettingsPage({
     super.key,
@@ -1674,6 +1712,8 @@ class SettingsPage extends StatelessWidget {
     required this.onToggleTheme,
     required this.isExperimentTrackingMode,
     required this.onToggleExperimentTracking,
+    required this.trackingDisplayMode,
+    required this.onSetTrackingDisplayMode,
   });
 
   @override
@@ -1878,6 +1918,182 @@ class SettingsPage extends StatelessWidget {
                           ],
                         ),
                       ),
+                      // 追蹤顯示模式選擇項目（只在實驗追蹤模式開啟時顯示）
+                      if (isExperimentTrackingMode) ...[
+                        Container(
+                          height: 1,
+                          color: isDarkMode 
+                              ? CupertinoColors.systemGrey4.darkColor
+                              : CupertinoColors.separator,
+                        ),
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          child: Row(
+                            children: [
+                              // 圖示
+                              Container(
+                                width: 32,
+                                height: 32,
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: [
+                                      CupertinoColors.systemPurple,
+                                      CupertinoColors.systemPink,
+                                    ],
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Icon(
+                                  trackingDisplayMode == 0 
+                                      ? CupertinoIcons.checkmark_square 
+                                      : CupertinoIcons.strikethrough,
+                                  color: CupertinoColors.white,
+                                  size: 18,
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              // 標題和描述
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Display Style',
+                                      style: TextStyle(
+                                        fontSize: 17,
+                                        fontWeight: FontWeight.w600,
+                                        color: isDarkMode ? CupertinoColors.white : CupertinoColors.black,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      trackingDisplayMode == 0 ? 'Checkbox' : 'Strikethrough',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: isDarkMode ? CupertinoColors.white : CupertinoColors.secondaryLabel,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              // 選擇按鈕
+                              CupertinoButton(
+                                padding: EdgeInsets.zero,
+                                onPressed: () {
+                                  showCupertinoModalPopup(
+                                    context: context,
+                                    builder: (BuildContext context) {
+                                      return Container(
+                                        height: 200,
+                                        color: isDarkMode 
+                                            ? CupertinoColors.systemGrey6.darkColor
+                                            : CupertinoColors.systemBackground,
+                                        child: Column(
+                                          children: [
+                                            // 頂部工具欄
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                              child: Row(
+                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                children: [
+                                                  CupertinoButton(
+                                                    padding: EdgeInsets.zero,
+                                                    onPressed: () => Navigator.of(context).pop(),
+                                                    child: Text(
+                                                      'Cancel',
+                                                      style: TextStyle(color: CupertinoColors.systemBlue),
+                                                    ),
+                                                  ),
+                                                  Text(
+                                                    'Display Style',
+                                                    style: TextStyle(
+                                                      fontSize: 17,
+                                                      fontWeight: FontWeight.w600,
+                                                      color: isDarkMode ? CupertinoColors.white : CupertinoColors.black,
+                                                    ),
+                                                  ),
+                                                  CupertinoButton(
+                                                    padding: EdgeInsets.zero,
+                                                    onPressed: () => Navigator.of(context).pop(),
+                                                    child: Text(
+                                                      'Done',
+                                                      style: TextStyle(color: CupertinoColors.systemBlue),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            // 選擇器
+                                            Expanded(
+                                              child: CupertinoPicker(
+                                                scrollController: FixedExtentScrollController(
+                                                  initialItem: trackingDisplayMode,
+                                                ),
+                                                itemExtent: 40,
+                                                onSelectedItemChanged: (int index) {
+                                                  onSetTrackingDisplayMode(index);
+                                                },
+                                                children: [
+                                                  Center(
+                                                    child: Row(
+                                                      mainAxisAlignment: MainAxisAlignment.center,
+                                                      children: [
+                                                        Icon(
+                                                          CupertinoIcons.checkmark_square,
+                                                          size: 16,
+                                                          color: isDarkMode ? CupertinoColors.white : CupertinoColors.black,
+                                                        ),
+                                                        const SizedBox(width: 8),
+                                                        Text(
+                                                          'Checkbox',
+                                                          style: TextStyle(
+                                                            fontSize: 16,
+                                                            color: isDarkMode ? CupertinoColors.white : CupertinoColors.black,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                  Center(
+                                                    child: Row(
+                                                      mainAxisAlignment: MainAxisAlignment.center,
+                                                      children: [
+                                                        Icon(
+                                                          CupertinoIcons.strikethrough,
+                                                          size: 16,
+                                                          color: isDarkMode ? CupertinoColors.white : CupertinoColors.black,
+                                                        ),
+                                                        const SizedBox(width: 8),
+                                                        Text(
+                                                          'Strikethrough',
+                                                          style: TextStyle(
+                                                            fontSize: 16,
+                                                            color: isDarkMode ? CupertinoColors.white : CupertinoColors.black,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    },
+                                  );
+                                },
+                                child: Text(
+                                  'Change',
+                                  style: TextStyle(color: CupertinoColors.systemBlue),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),

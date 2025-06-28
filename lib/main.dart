@@ -257,6 +257,26 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
     );
   }
 
+  void _showSuccessDialog(String message) {
+    showCupertinoDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return CupertinoAlertDialog(
+          title: const Text('Success'),
+          content: Text(message),
+          actions: <Widget>[
+            CupertinoDialogAction(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   void _clearAllInputs() {
     _numReactionsController.text = '1';
     _customReactionVolumeController.text = '50.0';
@@ -365,7 +385,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
         _currentConfigurationName = name;
       });
       
-      _showErrorDialog('Configuration "$name" saved successfully!');
+      _showSuccessDialog('Configuration "$name" saved successfully!');
     } catch (e) {
       _showErrorDialog('Failed to save configuration: $e');
     }

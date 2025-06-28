@@ -816,13 +816,21 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                 if (_calculatedTotalVolumes.containsKey(_reagents[i].name))
                   _isEditMode 
                     ? Dismissible(
-                        key: Key('reagent_$i'),
+                        key: ValueKey('${_reagents[i].name}_${_reagents[i].proportion}'),
                         direction: DismissDirection.endToStart,
                         confirmDismiss: (direction) async {
                           return await _showDeleteConfirmation(_reagents[i].name);
                         },
                         onDismissed: (direction) {
-                          _deleteReagent(i);
+                          // Store the reagent name to find after dismissal
+                          String reagentName = _reagents[i].name;
+                          // Use post-frame callback to ensure proper timing
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            int currentIndex = _reagents.indexWhere((r) => r.name == reagentName);
+                            if (currentIndex != -1) {
+                              _deleteReagent(currentIndex);
+                            }
+                          });
                         },
                         background: Container(
                           margin: const EdgeInsets.symmetric(vertical: 4.0),

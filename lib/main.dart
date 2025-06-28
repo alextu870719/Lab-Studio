@@ -304,14 +304,23 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
       context: context,
       builder: (BuildContext context) {
         return CupertinoAlertDialog(
-          title: const Text('Input Error'),
-          content: Text(message),
+          title: Text(
+            'Input Error',
+            style: TextStyle(color: CupertinoColors.label),
+          ),
+          content: Text(
+            message,
+            style: TextStyle(color: CupertinoColors.label),
+          ),
           actions: <Widget>[
             CupertinoDialogAction(
               onPressed: () {
                 Navigator.of(context).pop();
               },
-              child: const Text('OK'),
+              child: Text(
+                'OK',
+                style: TextStyle(color: CupertinoColors.systemBlue),
+              ),
             ),
           ],
         );
@@ -336,14 +345,23 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
       context: context,
       builder: (BuildContext context) {
         return CupertinoAlertDialog(
-          title: const Text('Success'),
-          content: Text(message),
+          title: Text(
+            'Success',
+            style: TextStyle(color: CupertinoColors.label),
+          ),
+          content: Text(
+            message,
+            style: TextStyle(color: CupertinoColors.label),
+          ),
           actions: <Widget>[
             CupertinoDialogAction(
               onPressed: () {
                 Navigator.of(context).pop();
               },
-              child: const Text('OK'),
+              child: Text(
+                'OK',
+                style: TextStyle(color: CupertinoColors.systemBlue),
+              ),
             ),
           ],
         );
@@ -379,7 +397,10 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
       context: context,
       builder: (BuildContext context) {
         return CupertinoAlertDialog(
-          title: const Text('Save Configuration'),
+          title: Text(
+            'Save Configuration',
+            style: TextStyle(color: CupertinoColors.label),
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -387,13 +408,22 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
               CupertinoTextField(
                 controller: nameController,
                 placeholder: 'Configuration Name',
+                style: TextStyle(color: CupertinoColors.label),
+                placeholderStyle: TextStyle(color: CupertinoColors.placeholderText),
+                decoration: BoxDecoration(
+                  color: CupertinoColors.tertiarySystemBackground,
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
               ),
             ],
           ),
           actions: [
             CupertinoDialogAction(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
+              child: Text(
+                'Cancel',
+                style: TextStyle(color: CupertinoColors.systemBlue),
+              ),
             ),
             CupertinoDialogAction(
               onPressed: () async {
@@ -402,7 +432,10 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                   await _saveConfigurationWithName(nameController.text.trim());
                 }
               },
-              child: const Text('Save'),
+              child: Text(
+                'Save',
+                style: TextStyle(color: CupertinoColors.systemBlue),
+              ),
             ),
           ],
         );
@@ -640,7 +673,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
             style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
               color: reagent.isOptional && !isIncluded 
                   ? CupertinoColors.secondaryLabel 
-                  : CupertinoColors.label,
+                  : (widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
             ),
           ),
         ),
@@ -654,7 +687,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
             style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
               color: reagent.isOptional && !isIncluded 
                   ? CupertinoColors.secondaryLabel 
-                  : CupertinoColors.label,
+                  : (widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
             ),
           ),
         ),
@@ -669,7 +702,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
               fontWeight: FontWeight.w600,
               color: reagent.isOptional && !isIncluded 
                   ? CupertinoColors.secondaryLabel 
-                  : CupertinoColors.label,
+                  : (widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
             ),
           ),
         ),
@@ -697,6 +730,8 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                 key: ValueKey('name_$index'),
                 placeholder: 'Reagent Name',
                 controller: _reagentNameControllers[index],
+                style: TextStyle(color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
+                placeholderStyle: TextStyle(color: CupertinoColors.placeholderText),
                 onChanged: (value) {
                   _debouncedUpdate(() {
                     setState(() {
@@ -712,7 +747,9 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                   });
                 },
                 decoration: BoxDecoration(
-                  color: CupertinoColors.tertiarySystemBackground,
+                  color: widget.isDarkMode 
+                      ? CupertinoColors.systemGrey5.darkColor
+                      : CupertinoColors.tertiarySystemBackground,
                   borderRadius: BorderRadius.circular(8.0),
                 ),
                 padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
@@ -727,6 +764,8 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                 controller: _reagentVolumeControllers[index],
                 keyboardType: TextInputType.number,
                 inputFormatters: [BankStyleDecimalFormatter(decimalPlaces: 1, maxDigits: 5)],
+                style: TextStyle(color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
+                placeholderStyle: TextStyle(color: CupertinoColors.placeholderText),
                 onChanged: (value) {
                   _debouncedUpdate(() {
                     double? newVolume = double.tryParse(value);
@@ -748,7 +787,9 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                   }
                 },
                 decoration: BoxDecoration(
-                  color: CupertinoColors.tertiarySystemBackground,
+                  color: widget.isDarkMode 
+                      ? CupertinoColors.systemGrey5.darkColor
+                      : CupertinoColors.tertiarySystemBackground,
                   borderRadius: BorderRadius.circular(8.0),
                 ),
                 padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
@@ -815,17 +856,29 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
       context: context,
       builder: (BuildContext context) {
         return CupertinoAlertDialog(
-          title: const Text('Delete Reagent'),
-          content: Text('Are you sure you want to delete "$reagentName"?'),
+          title: Text(
+            'Delete Reagent',
+            style: TextStyle(color: CupertinoColors.label),
+          ),
+          content: Text(
+            'Are you sure you want to delete "$reagentName"?',
+            style: TextStyle(color: CupertinoColors.label),
+          ),
           actions: [
             CupertinoDialogAction(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
+              child: Text(
+                'Cancel',
+                style: TextStyle(color: CupertinoColors.systemBlue),
+              ),
             ),
             CupertinoDialogAction(
               isDestructiveAction: true,
               onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Delete'),
+              child: Text(
+                'Delete',
+                style: TextStyle(color: CupertinoColors.destructiveRed),
+              ),
             ),
           ],
         );
@@ -892,15 +945,19 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
-        middle: const Text('PCR Calculator'),
+        middle: Text(
+          'PCR Calculator',
+          style: TextStyle(color: CupertinoColors.label),
+        ),
         trailing: CupertinoButton(
           padding: EdgeInsets.zero,
           onPressed: () {
             _showSettingsPage();
           },
-          child: const Icon(
+          child: Icon(
             CupertinoIcons.settings,
             size: 24,
+            color: CupertinoColors.label,
           ),
         ),
       ),
@@ -929,7 +986,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                     'PCR Parameters',
                     style: CupertinoTheme.of(context).textTheme.navLargeTitleTextStyle.copyWith(
                       fontSize: 20,
-                      color: CupertinoColors.label,
+                      color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -941,8 +998,12 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                           placeholder: 'Number of Reactions',
                           keyboardType: TextInputType.number,
                           inputFormatters: [BankStyleIntegerFormatter(maxDigits: 3)],
+                          style: TextStyle(color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
+                          placeholderStyle: TextStyle(color: CupertinoColors.placeholderText),
                           decoration: BoxDecoration(
-                            color: CupertinoColors.tertiarySystemBackground,
+                            color: widget.isDarkMode 
+                                ? CupertinoColors.systemGrey5.darkColor
+                                : CupertinoColors.tertiarySystemBackground,
                             borderRadius: BorderRadius.circular(8.0),
                           ),
                           padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 12.0),
@@ -956,8 +1017,12 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                           placeholder: 'Reaction Volume (µl)',
                           keyboardType: TextInputType.number,
                           inputFormatters: [BankStyleDecimalFormatter(decimalPlaces: 1, maxDigits: 5)],
+                          style: TextStyle(color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
+                          placeholderStyle: TextStyle(color: CupertinoColors.placeholderText),
                           decoration: BoxDecoration(
-                            color: CupertinoColors.tertiarySystemBackground,
+                            color: widget.isDarkMode 
+                                ? CupertinoColors.systemGrey5.darkColor
+                                : CupertinoColors.tertiarySystemBackground,
                             borderRadius: BorderRadius.circular(8.0),
                           ),
                           padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 12.0),
@@ -972,8 +1037,12 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                     placeholder: 'Template DNA Volume (µl)',
                     keyboardType: TextInputType.number,
                     inputFormatters: [BankStyleDecimalFormatter(decimalPlaces: 1, maxDigits: 5)],
+                    style: TextStyle(color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
+                    placeholderStyle: TextStyle(color: CupertinoColors.placeholderText),
                     decoration: BoxDecoration(
-                      color: CupertinoColors.tertiarySystemBackground,
+                      color: widget.isDarkMode 
+                          ? CupertinoColors.systemGrey5.darkColor
+                          : CupertinoColors.tertiarySystemBackground,
                       borderRadius: BorderRadius.circular(8.0),
                     ),
                     padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 12.0),
@@ -985,21 +1054,30 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                       Expanded(
                         child: CupertinoButton.filled(
                           onPressed: _clearAllInputs,
-                          child: const Text('Clear'),
+                          child: Text(
+                            'Clear',
+                            style: TextStyle(color: CupertinoColors.white),
+                          ),
                         ),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
                         child: CupertinoButton.filled(
                           onPressed: _printResults,
-                          child: const Text('Print'),
+                          child: Text(
+                            'Print',
+                            style: TextStyle(color: CupertinoColors.white),
+                          ),
                         ),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
                         child: CupertinoButton.filled(
                           onPressed: _copyResults,
-                          child: const Text('Copy'),
+                          child: Text(
+                            'Copy',
+                            style: TextStyle(color: CupertinoColors.white),
+                          ),
                         ),
                       ),
                     ],
@@ -1028,7 +1106,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                               _currentConfigurationName,
                               style: CupertinoTheme.of(context).textTheme.navLargeTitleTextStyle.copyWith(
                                 fontSize: 20,
-                                color: CupertinoColors.label,
+                                color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -1101,7 +1179,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                           'Components',
                           style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
                             fontWeight: FontWeight.w600,
-                            color: CupertinoColors.secondaryLabel,
+                            color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.secondaryLabel,
                           ),
                         ),
                       ),
@@ -1112,7 +1190,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                           textAlign: TextAlign.center,
                           style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
                             fontWeight: FontWeight.w600,
-                            color: CupertinoColors.secondaryLabel,
+                            color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.secondaryLabel,
                           ),
                         ),
                       ),
@@ -1123,7 +1201,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                           textAlign: TextAlign.end,
                           style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
                             fontWeight: FontWeight.w600,
-                            color: CupertinoColors.secondaryLabel,
+                            color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.secondaryLabel,
                           ),
                         ),
                       ),
@@ -1144,7 +1222,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                           'Components',
                           style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
                             fontWeight: FontWeight.w600,
-                            color: CupertinoColors.secondaryLabel,
+                            color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.secondaryLabel,
                           ),
                         ),
                       ),
@@ -1156,7 +1234,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                           textAlign: TextAlign.center,
                           style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
                             fontWeight: FontWeight.w600,
-                            color: CupertinoColors.secondaryLabel,
+                            color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.secondaryLabel,
                           ),
                         ),
                       ),
@@ -1165,7 +1243,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                         'Optional',
                         style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
                           fontWeight: FontWeight.w600,
-                          color: CupertinoColors.secondaryLabel,
+                          color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.secondaryLabel,
                         ),
                       ),
                     ],
@@ -1245,10 +1323,15 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                     onPressed: _addNewReagent,
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
-                        Icon(CupertinoIcons.add),
-                        SizedBox(width: 8),
-                        Text('Add New Reagent'),
+                      children: [
+                        const Icon(CupertinoIcons.add),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Add New Reagent',
+                          style: TextStyle(
+                            color: CupertinoColors.systemBlue,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -1299,17 +1382,29 @@ class _ConfigurationSelectorState extends State<ConfigurationSelector> {
       context: context,
       builder: (BuildContext context) {
         return CupertinoAlertDialog(
-          title: const Text('Delete Configuration'),
-          content: Text('Are you sure you want to delete "${config.name}"? This action cannot be undone.'),
+          title: Text(
+            'Delete Configuration',
+            style: TextStyle(color: CupertinoColors.label),
+          ),
+          content: Text(
+            'Are you sure you want to delete "${config.name}"? This action cannot be undone.',
+            style: TextStyle(color: CupertinoColors.label),
+          ),
           actions: [
             CupertinoDialogAction(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
+              child: Text(
+                'Cancel',
+                style: TextStyle(color: CupertinoColors.systemBlue),
+              ),
             ),
             CupertinoDialogAction(
               isDestructiveAction: true,
               onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Delete'),
+              child: Text(
+                'Delete',
+                style: TextStyle(color: CupertinoColors.destructiveRed),
+              ),
             ),
           ],
         );
@@ -1380,7 +1475,10 @@ class _ConfigurationSelectorState extends State<ConfigurationSelector> {
                 CupertinoButton(
                   padding: EdgeInsets.zero,
                   onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Cancel'),
+                  child: Text(
+                    'Cancel',
+                    style: TextStyle(color: CupertinoColors.systemBlue),
+                  ),
                 ),
               ],
             ),
@@ -1388,7 +1486,7 @@ class _ConfigurationSelectorState extends State<ConfigurationSelector> {
           // 垂直轉盤列表
           Expanded(
             child: configs.isEmpty
-                ? const Center(
+                ? Center(
                     child: Text(
                       'No configurations available',
                       style: TextStyle(
@@ -1549,7 +1647,7 @@ class SettingsPage extends StatelessWidget {
                 Text(
                   'Settings',
                   style: TextStyle(
-                    fontSize: 24,
+                    fontSize: 20,
                     fontWeight: FontWeight.w600,
                     color: CupertinoColors.label,
                   ),
@@ -1557,7 +1655,10 @@ class SettingsPage extends StatelessWidget {
                 CupertinoButton(
                   padding: EdgeInsets.zero,
                   onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Done'),
+                  child: Text(
+                    'Done',
+                    style: TextStyle(color: CupertinoColors.systemBlue),
+                  ),
                 ),
               ],
             ),

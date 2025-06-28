@@ -165,15 +165,13 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
   void _calculateVolumes() {
     setState(() {
       _calculatedTotalVolumes.clear();
+      
+      // Use default values if fields are empty or invalid
       int numReactions = int.tryParse(_numReactionsController.text) ?? 1;
       if (numReactions <= 0) numReactions = 1;
 
-      double totalVolumePerReaction = double.tryParse(_customReactionVolumeController.text) ?? 0.0;
-
-      if (totalVolumePerReaction <= 0) {
-        _showErrorDialog('Please enter a valid total reaction volume.');
-        return;
-      }
+      double totalVolumePerReaction = double.tryParse(_customReactionVolumeController.text) ?? 25.0;
+      if (totalVolumePerReaction <= 0) totalVolumePerReaction = 25.0;
 
       double totalCalculatedVolumeExcludingWater = 0.0;
 
@@ -183,12 +181,9 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
 
         double singleReactionVolume;
         if (reagent.isVariable) {
-          double? parsedVolume = double.tryParse(_templateDnaVolumeController.text);
-          if (parsedVolume == null && _templateDnaVolumeController.text.isNotEmpty) {
-             _showErrorDialog('Please enter a valid number for Template DNA volume.');
-             return;
-          }
-          singleReactionVolume = parsedVolume ?? 0.0;
+          // For Template DNA, use 0 if empty or invalid, no error dialog
+          double parsedVolume = double.tryParse(_templateDnaVolumeController.text) ?? 0.0;
+          singleReactionVolume = parsedVolume;
         } else {
           singleReactionVolume = reagent.proportion * totalVolumePerReaction;
         }

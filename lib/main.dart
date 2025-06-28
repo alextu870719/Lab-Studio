@@ -141,7 +141,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
     Reagent(id: 'reverse_primer', name: '10 µM Reverse Primer', proportion: 5.0 / 50.0),
     Reagent(id: 'polymerase', name: 'Q5 High-Fidelity DNA Polymerase', proportion: 1.0 / 50.0),
     Reagent(id: 'gc_enhancer', name: '5X Q5 High GC Enhancer (optional)', proportion: 10.0 / 50.0, isOptional: true),
-    Reagent(id: 'water', name: 'Nuclease-Free Water', proportion: 0.0),
+    Reagent(id: 'water', name: 'Water', proportion: 0.0),
   ];
 
   // Controllers for edit mode to prevent focus loss
@@ -209,7 +209,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
 
       // 計算其他試劑
       for (var reagent in _reagents) {
-        if (reagent.name == 'Nuclease-Free Water') continue;
+        if (reagent.name == 'Water') continue;
 
         double singleReactionVolume = reagent.proportion * totalVolumePerReaction;
         double totalReagentVolume = singleReactionVolume * numReactions;
@@ -223,10 +223,10 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
       if (waterVolume < 0) {
         _hasVolumeError = true;
         // Set water to 0 to show the problem, but keep reagents visible
-        _calculatedTotalVolumes['Nuclease-Free Water'] = 0.0;
+        _calculatedTotalVolumes['Water'] = 0.0;
       } else {
         _hasVolumeError = false;
-        _calculatedTotalVolumes['Nuclease-Free Water'] = waterVolume;
+        _calculatedTotalVolumes['Water'] = waterVolume;
       }
     });
   }

@@ -29,17 +29,19 @@ class MyApp extends StatelessWidget {
 }
 
 class Reagent {
+  final String id;  // 添加唯一 ID
   final String name;
   final double proportion;
   final bool isOptional;
   final bool isVariable;
 
   Reagent({
+    String? id,  // 可選 ID，如果未提供則自動生成
     required this.name,
     required this.proportion,
     this.isOptional = false,
     this.isVariable = false,
-  });
+  }) : id = id ?? DateTime.now().millisecondsSinceEpoch.toString() + name.hashCode.toString();
 
   Reagent copyWith({
     String? name,
@@ -48,6 +50,7 @@ class Reagent {
     bool? isVariable,
   }) {
     return Reagent(
+      id: this.id,  // 保持相同的 ID
       name: name ?? this.name,
       proportion: proportion ?? this.proportion,
       isOptional: isOptional ?? this.isOptional,
@@ -57,6 +60,7 @@ class Reagent {
 
   Map<String, dynamic> toJson() {
     return {
+      'id': id,
       'name': name,
       'proportion': proportion,
       'isOptional': isOptional,
@@ -66,6 +70,7 @@ class Reagent {
 
   factory Reagent.fromJson(Map<String, dynamic> json) {
     return Reagent(
+      id: json['id'],  // 從 JSON 載入時保持 ID
       name: json['name'] ?? '',
       proportion: (json['proportion'] ?? 0.0).toDouble(),
       isOptional: json['isOptional'] ?? false,
@@ -135,14 +140,14 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
   String _currentConfigurationName = 'Default Configuration';
 
   final List<Reagent> _reagents = [
-    Reagent(name: '5X Q5 Reaction Buffer', proportion: 10.0 / 50.0),
-    Reagent(name: '10 mM dNTPs', proportion: 4.0 / 50.0),
-    Reagent(name: '10 µM Forward Primer', proportion: 5.0 / 50.0),
-    Reagent(name: '10 µM Reverse Primer', proportion: 5.0 / 50.0),
-    Reagent(name: 'Template DNA', proportion: 0.0, isVariable: true),
-    Reagent(name: 'Q5 High-Fidelity DNA Polymerase', proportion: 1.0 / 50.0),
-    Reagent(name: '5X Q5 High GC Enhancer (optional)', proportion: 10.0 / 50.0, isOptional: true),
-    Reagent(name: 'Nuclease-Free Water', proportion: 0.0),
+    Reagent(id: 'buffer', name: '5X Q5 Reaction Buffer', proportion: 10.0 / 50.0),
+    Reagent(id: 'dntps', name: '10 mM dNTPs', proportion: 4.0 / 50.0),
+    Reagent(id: 'forward_primer', name: '10 µM Forward Primer', proportion: 5.0 / 50.0),
+    Reagent(id: 'reverse_primer', name: '10 µM Reverse Primer', proportion: 5.0 / 50.0),
+    Reagent(id: 'template_dna', name: 'Template DNA', proportion: 0.0, isVariable: true),
+    Reagent(id: 'polymerase', name: 'Q5 High-Fidelity DNA Polymerase', proportion: 1.0 / 50.0),
+    Reagent(id: 'gc_enhancer', name: '5X Q5 High GC Enhancer (optional)', proportion: 10.0 / 50.0, isOptional: true),
+    Reagent(id: 'water', name: 'Nuclease-Free Water', proportion: 0.0),
   ];
 
   // Controllers for edit mode to prevent focus loss
@@ -253,6 +258,13 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
     _numReactionsController.text = '1';
     _customReactionVolumeController.text = '50.0';
     _templateDnaVolumeController.clear();
+    
+    // Reset edit controllers to match reagent values
+    for (int i = 0; i < _reagents.length && i < _reagentNameControllers.length; i++) {
+      _reagentNameControllers[i].text = _reagents[i].name;
+      _reagentVolumeControllers[i].text = (_reagents[i].proportion * 50.0).toString();
+    }
+    
     setState(() {
       _calculatedTotalVolumes.clear();
       for (var reagent in _reagents) {
@@ -260,6 +272,8 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
           _reagentInclusionStatus[reagent.name] = false;
         }
       }
+      // Recalculate volumes to show the cleared results
+      _calculateVolumes();
     });
   }
 
@@ -440,6 +454,11 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
   }
 
   Widget _buildDisplayReagentRow(Reagent reagent) {
+    // Get the calculated volume, default to 0.0 if not found
+    double totalVolume = _calculatedTotalVolumes[reagent.name] ?? 0.0;
+    int numReactions = int.tryParse(_numReactionsController.text) ?? 1;
+    double volumePerReaction = numReactions > 0 ? totalVolume / numReactions : 0.0;
+    
     return Row(
       children: [
         Expanded(
@@ -452,8 +471,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
         Expanded(
           flex: 2,
           child: Text(
-            formatVolume(_calculatedTotalVolumes[reagent.name]! / 
-                (int.tryParse(_numReactionsController.text) ?? 1)),
+            formatVolume(volumePerReaction),
             textAlign: TextAlign.center,
             style: CupertinoTheme.of(context).textTheme.textStyle,
           ),
@@ -461,7 +479,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
         Expanded(
           flex: 2,
           child: Text(
-            formatVolume(_calculatedTotalVolumes[reagent.name]!),
+            formatVolume(totalVolume),
             textAlign: TextAlign.end,
             style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
               fontWeight: FontWeight.w600,
@@ -569,14 +587,19 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
   }
 
   void _deleteReagent(int index) {
-    if (_reagents.length > 1) {
-      setState(() {
-        _reagents.removeAt(index);
+    setState(() {
+      _reagents.removeAt(index);
+      // Also remove corresponding controllers
+      if (index < _reagentNameControllers.length) {
+        _reagentNameControllers[index].dispose();
         _reagentNameControllers.removeAt(index);
+      }
+      if (index < _reagentVolumeControllers.length) {
+        _reagentVolumeControllers[index].dispose();
         _reagentVolumeControllers.removeAt(index);
-        _calculateVolumes();
-      });
-    }
+      }
+      _calculateVolumes();
+    });
   }
 
   Future<bool?> _showDeleteConfirmation(String reagentName) async {
@@ -752,7 +775,8 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
             const SizedBox(height: 8),
 
             // Reagents List
-            if (_calculatedTotalVolumes.isNotEmpty) ...[
+            // Always show reagents list, even if calculations are empty
+            ...[
               // Header row for normal display mode
               if (!_isEditMode)
                 Container(
@@ -833,7 +857,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                 if (_isEditMode || _calculatedTotalVolumes.containsKey(_reagents[i].name))
                   _isEditMode 
                     ? Dismissible(
-                        key: ValueKey('${_reagents[i].name}_${_reagents[i].proportion}'),
+                        key: ValueKey(_reagents[i].id),  // 使用唯一 ID 作為 key
                         direction: DismissDirection.endToStart,
                         dismissThresholds: const {
                           DismissDirection.endToStart: 0.6, // Require 60% swipe to trigger
@@ -842,15 +866,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                           return await _showDeleteConfirmation(_reagents[i].name);
                         },
                         onDismissed: (direction) {
-                          // Store the reagent name to find after dismissal
-                          String reagentName = _reagents[i].name;
-                          // Use post-frame callback to ensure proper timing
-                          WidgetsBinding.instance.addPostFrameCallback((_) {
-                            int currentIndex = _reagents.indexWhere((r) => r.name == reagentName);
-                            if (currentIndex != -1) {
-                              _deleteReagent(currentIndex);
-                            }
-                          });
+                          _deleteReagent(i);
                         },
                         background: Container(
                           margin: const EdgeInsets.symmetric(vertical: 4.0),
@@ -910,18 +926,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                     ),
                   ),
                 ),
-            ] else
-              Container(
-                padding: const EdgeInsets.all(32.0),
-                child: const Center(
-                  child: Text(
-                    'Enter parameters above to calculate volumes',
-                    style: TextStyle(
-                      color: CupertinoColors.secondaryLabel,
-                    ),
-                  ),
-                ),
-              ),
+            ],
           ],
         ),
       ),

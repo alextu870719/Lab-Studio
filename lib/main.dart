@@ -569,18 +569,21 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
     
     return Row(
       children: [
-        // Optional 開關（只對 optional 試劑顯示）
+        // Optional 開關（只對 optional 試劑顯示，使用較小的尺寸）
         if (reagent.isOptional) ...[
-          CupertinoSwitch(
-            value: isIncluded,
-            onChanged: (bool value) {
-              setState(() {
-                _reagentInclusionStatus[reagent.name] = value;
-                _calculateVolumes();
-              });
-            },
+          Transform.scale(
+            scale: 0.8,
+            child: CupertinoSwitch(
+              value: isIncluded,
+              onChanged: (bool value) {
+                setState(() {
+                  _reagentInclusionStatus[reagent.name] = value;
+                  _calculateVolumes();
+                });
+              },
+            ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 4),
         ],
         Expanded(
           flex: 3,
@@ -704,26 +707,15 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
               ),
             ),
             const SizedBox(width: 8),
-            // Optional 開關
-            Column(
-              children: [
-                Text(
-                  'Optional',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: CupertinoColors.secondaryLabel,
-                  ),
-                ),
-                CupertinoSwitch(
-                  value: reagent.isOptional,
-                  onChanged: (bool value) {
-                    setState(() {
-                      _reagents[index] = reagent.copyWith(isOptional: value);
-                      _calculateVolumes();
-                    });
-                  },
-                ),
-              ],
+            // Optional 開關（移除標籤，只保留開關）
+            CupertinoSwitch(
+              value: reagent.isOptional,
+              onChanged: (bool value) {
+                setState(() {
+                  _reagents[index] = reagent.copyWith(isOptional: value);
+                  _calculateVolumes();
+                });
+              },
             ),
           ],
         ),
@@ -1057,6 +1049,14 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                             fontWeight: FontWeight.w600,
                             color: CupertinoColors.secondaryLabel,
                           ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Optional',
+                        style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: CupertinoColors.secondaryLabel,
                         ),
                       ),
                     ],

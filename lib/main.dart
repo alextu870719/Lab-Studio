@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -147,6 +148,9 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
   // Controllers for edit mode to prevent focus loss
   List<TextEditingController> _reagentNameControllers = [];
   List<TextEditingController> _reagentVolumeControllers = [];
+  
+  // Timer for debouncing input updates
+  Timer? _debounceTimer;
 
   @override
   void initState() {
@@ -160,10 +164,27 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
     _reagentVolumeControllers.clear();
     
     for (int i = 0; i < _reagents.length; i++) {
-      _reagentNameControllers.add(TextEditingController(text: _reagents[i].name));
-      _reagentVolumeControllers.add(
-        TextEditingController(text: (_reagents[i].proportion * 50.0).toString())
-      );
+      final nameController = TextEditingController(text: _reagents[i].name);
+      final volumeController = TextEditingController(text: (_reagents[i].proportion * 50.0).toString());
+      
+      // Add listeners instead of using onChanged
+      nameController.addListener(() {
+        if (nameController.text != _reagents[i].name) {
+          _reagents[i] = _reagents[i].copyWith(name: nameController.text);
+          _debounceCalculateVolumes();
+        }
+      });
+      
+      volumeController.addListener(() {
+        double? newVolume = double.tryParse(volumeController.text);
+        if (newVolume != null && newVolume / 50.0 != _reagents[i].proportion) {
+          _reagents[i] = _reagents[i].copyWith(proportion: newVolume / 50.0);
+          _debounceCalculateVolumes();
+        }
+      });
+      
+      _reagentNameControllers.add(nameController);
+      _reagentVolumeControllers.add(volumeController);
     }
   }
 
@@ -176,6 +197,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
     for (var controller in _reagentVolumeControllers) {
       controller.dispose();
     }
+    _debounceTimer?.cancel();
     _numReactionsController.dispose();
     _customReactionVolumeController.dispose();
     _templateDnaVolumeController.dispose();
@@ -472,18 +494,29 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
   Widget _buildEditableReagentRow(Reagent reagent, int index) {
     // Ensure controllers exist for this index
     while (_reagentNameControllers.length <= index) {
-      _reagentNameControllers.add(TextEditingController());
-      _reagentVolumeControllers.add(TextEditingController());
-    }
-    
-    // Update controller values only if they don't match current reagent
-    if (_reagentNameControllers[index].text != reagent.name) {
-      _reagentNameControllers[index].text = reagent.name;
-    }
-    
-    String volumeText = (reagent.proportion * 50.0).toString();
-    if (_reagentVolumeControllers[index].text != volumeText) {
-      _reagentVolumeControllers[index].text = volumeText;
+      final nameController = TextEditingController(text: _reagents[_reagentNameControllers.length].name);
+      final volumeController = TextEditingController(text: (_reagents[_reagentVolumeControllers.length].proportion * 50.0).toString());
+      
+      final currentIndex = _reagentNameControllers.length;
+      
+      // Add listeners instead of using onChanged
+      nameController.addListener(() {
+        if (nameController.text != _reagents[currentIndex].name) {
+          _reagents[currentIndex] = _reagents[currentIndex].copyWith(name: nameController.text);
+          _debounceCalculateVolumes();
+        }
+      });
+      
+      volumeController.addListener(() {
+        double? newVolume = double.tryParse(volumeController.text);
+        if (newVolume != null && newVolume / 50.0 != _reagents[currentIndex].proportion) {
+          _reagents[currentIndex] = _reagents[currentIndex].copyWith(proportion: newVolume / 50.0);
+          _debounceCalculateVolumes();
+        }
+      });
+      
+      _reagentNameControllers.add(nameController);
+      _reagentVolumeControllers.add(volumeController);
     }
 
     return Column(
@@ -496,12 +529,6 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
               child: CupertinoTextField(
                 placeholder: 'Reagent Name',
                 controller: _reagentNameControllers[index],
-                onChanged: (value) {
-                  setState(() {
-                    _reagents[index] = reagent.copyWith(name: value);
-                    _calculateVolumes();
-                  });
-                },
                 decoration: BoxDecoration(
                   color: CupertinoColors.tertiarySystemBackground,
                   borderRadius: BorderRadius.circular(8.0),
@@ -517,15 +544,6 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                   placeholder: 'Volume',
                   controller: _reagentVolumeControllers[index],
                   keyboardType: TextInputType.number,
-                  onChanged: (value) {
-                    double? newVolume = double.tryParse(value);
-                    if (newVolume != null) {
-                      setState(() {
-                        _reagents[index] = reagent.copyWith(proportion: newVolume / 50.0);
-                        _calculateVolumes();
-                      });
-                    }
-                  },
                   decoration: BoxDecoration(
                     color: CupertinoColors.tertiarySystemBackground,
                     borderRadius: BorderRadius.circular(8.0),
@@ -605,6 +623,17 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
         );
       },
     );
+  }
+
+  void _debounceCalculateVolumes() {
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(Duration(milliseconds: 300), () {
+      if (mounted) {
+        setState(() {
+          _calculateVolumes();
+        });
+      }
+    });
   }
 
   @override

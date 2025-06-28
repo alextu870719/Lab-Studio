@@ -800,9 +800,10 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
       }
       
       await prefs.setStringList('saved_configurations', updatedConfigStrings);
-      _showSuccessDialog('Configuration "${configToDelete.name}" deleted successfully.');
+      // 移除這裡的成功訊息顯示，讓調用方來處理
     } catch (e) {
-      _showErrorDialog('Failed to delete configuration: $e');
+      // 拋出異常讓調用方處理錯誤訊息
+      throw Exception('Failed to delete configuration: $e');
     }
   }
 

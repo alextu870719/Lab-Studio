@@ -591,6 +591,14 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                 key: ValueKey('name_$index'),
                 placeholder: 'Reagent Name',
                 controller: _reagentNameControllers[index],
+                onChanged: (value) {
+                  _debouncedUpdate(() {
+                    setState(() {
+                      _reagents[index] = reagent.copyWith(name: value);
+                      _calculateVolumes();
+                    });
+                  });
+                },
                 onSubmitted: (value) {
                   setState(() {
                     _reagents[index] = reagent.copyWith(name: value);
@@ -613,6 +621,17 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                 controller: _reagentVolumeControllers[index],
                 keyboardType: TextInputType.number,
                 inputFormatters: [BankStyleDecimalFormatter(decimalPlaces: 1, maxDigits: 5)],
+                onChanged: (value) {
+                  _debouncedUpdate(() {
+                    double? newVolume = double.tryParse(value);
+                    if (newVolume != null) {
+                      setState(() {
+                        _reagents[index] = reagent.copyWith(proportion: newVolume / 50.0);
+                        _calculateVolumes();
+                      });
+                    }
+                  });
+                },
                 onSubmitted: (value) {
                   double? newVolume = double.tryParse(value);
                   if (newVolume != null) {
@@ -690,6 +709,30 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
         );
       },
     );
+  }
+
+  // 帶防抖的更新方法，避免編輯模式快速輸入時的性能問題
+  void _debouncedUpdate(VoidCallback updateCallback) {
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+      updateCallback();
+    });
+  }
+
+  // 將編輯控制器的值同步到試劑列表（退出編輯模式時使用）
+  void _syncEditControllersToReagents() {
+    for (int i = 0; i < _reagents.length && i < _reagentNameControllers.length; i++) {
+      String name = _reagentNameControllers[i].text;
+      double? volume = double.tryParse(_reagentVolumeControllers[i].text);
+      
+      if (name.isNotEmpty && volume != null && volume > 0) {
+        _reagents[i] = _reagents[i].copyWith(
+          name: name,
+          proportion: volume / 50.0,
+        );
+      }
+    }
+    _calculateVolumes();
   }
 
   @override
@@ -833,6 +876,13 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                 CupertinoButton(
                   onPressed: _isEditMode && _hasVolumeError ? null : () {
                     setState(() {
+                      if (_isEditMode) {
+                        // 退出編輯模式時，確保所有變更都已同步
+                        _syncEditControllersToReagents();
+                      } else {
+                        // 進入編輯模式時，重新初始化控制器
+                        _initializeEditControllers();
+                      }
                       _isEditMode = !_isEditMode;
                     });
                   },

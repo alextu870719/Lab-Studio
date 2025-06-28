@@ -146,11 +146,6 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
   @override
   void initState() {
     super.initState();
-    for (var reagent in _reagents) {
-      if (reagent.isOptional) {
-        _reagentInclusionStatus[reagent.name] = false;
-      }
-    }
     _calculateVolumes();
   }
 
@@ -177,7 +172,6 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
 
       for (var reagent in _reagents) {
         if (reagent.name == 'Nuclease-Free Water') continue;
-        if (reagent.isOptional && !(_reagentInclusionStatus[reagent.name] ?? false)) continue;
 
         double singleReactionVolume;
         if (reagent.isVariable) {
@@ -515,34 +509,6 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
             ],
           ],
         ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            if (reagent.isOptional) ...[
-              CupertinoSwitch(
-                value: _reagentInclusionStatus[reagent.name] ?? false,
-                onChanged: (value) {
-                  setState(() {
-                    _reagentInclusionStatus[reagent.name] = value;
-                    _calculateVolumes();
-                  });
-                },
-              ),
-              const SizedBox(width: 8),
-              const Text('Include in calculation'),
-            ] else ...[
-              const Text('Required reagent'),
-            ],
-            const Spacer(),
-            Text(
-              'Swipe left to delete',
-              style: TextStyle(
-                color: CupertinoColors.secondaryLabel,
-                fontSize: 12,
-              ),
-            ),
-          ],
-        ),
       ],
     );
   }
@@ -553,12 +519,9 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
       Reagent newReagent = Reagent(
         name: newReagentName,
         proportion: 1.0 / 25.0,
-        isOptional: true,
+        isOptional: false, // Make all new reagents required for simplicity
       );
       _reagents.add(newReagent);
-      
-      // Initialize the inclusion status for the new optional reagent
-      _reagentInclusionStatus[newReagentName] = true; // Default to included
       
       _calculateVolumes();
     });
@@ -567,9 +530,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
   void _deleteReagent(int index) {
     if (_reagents.length > 1) {
       setState(() {
-        String reagentName = _reagents[index].name;
         _reagents.removeAt(index);
-        _reagentInclusionStatus.remove(reagentName);
         _calculateVolumes();
       });
     }

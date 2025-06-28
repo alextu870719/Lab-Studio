@@ -163,10 +163,16 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
     _reagentVolumeControllers.clear();
     
     for (int i = 0; i < _reagents.length; i++) {
-      _reagentNameControllers.add(TextEditingController(text: _reagents[i].name));
-      double volume = _reagents[i].proportion * 50.0;
-      String formattedVolume = volume.toStringAsFixed(1);
-      _reagentVolumeControllers.add(TextEditingController(text: formattedVolume));
+      if (_reagents[i].name == 'Water') {
+        // Water 試劑不需要編輯控制器，因為它是自動計算的
+        _reagentNameControllers.add(TextEditingController());
+        _reagentVolumeControllers.add(TextEditingController());
+      } else {
+        _reagentNameControllers.add(TextEditingController(text: _reagents[i].name));
+        double volume = _reagents[i].proportion * 50.0;
+        String formattedVolume = volume.toStringAsFixed(1);
+        _reagentVolumeControllers.add(TextEditingController(text: formattedVolume));
+      }
     }
   }
 
@@ -673,6 +679,11 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
   }
 
   void _deleteReagent(int index) {
+    // 防止刪除 Water 試劑
+    if (index < _reagents.length && _reagents[index].name == 'Water') {
+      return;
+    }
+    
     setState(() {
       _reagents.removeAt(index);
       // Also remove corresponding controllers
@@ -722,6 +733,9 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
   // 將編輯控制器的值同步到試劑列表（退出編輯模式時使用）
   void _syncEditControllersToReagents() {
     for (int i = 0; i < _reagents.length && i < _reagentNameControllers.length; i++) {
+      // 跳過 Water 試劑，因為它是自動計算的
+      if (_reagents[i].name == 'Water') continue;
+      
       String name = _reagentNameControllers[i].text;
       double? volume = double.tryParse(_reagentVolumeControllers[i].text);
       
@@ -979,7 +993,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                 ),
               
               for (var i = 0; i < _reagents.length; i++)
-                if (_isEditMode || _calculatedTotalVolumes.containsKey(_reagents[i].name))
+                if ((_isEditMode && _reagents[i].name != 'Water') || (!_isEditMode && _calculatedTotalVolumes.containsKey(_reagents[i].name)))
                   _isEditMode 
                     ? Dismissible(
                         key: ValueKey(_reagents[i].id),  // 使用唯一 ID 作為 key
@@ -988,6 +1002,10 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                           DismissDirection.endToStart: 0.6, // Require 60% swipe to trigger
                         },
                         confirmDismiss: (direction) async {
+                          // 防止刪除 Water 試劑
+                          if (_reagents[i].name == 'Water') {
+                            return false;
+                          }
                           return await _showDeleteConfirmation(_reagents[i].name);
                         },
                         onDismissed: (direction) {

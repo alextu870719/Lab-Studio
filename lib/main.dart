@@ -824,6 +824,9 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                     ? Dismissible(
                         key: ValueKey('${_reagents[i].name}_${_reagents[i].proportion}'),
                         direction: DismissDirection.endToStart,
+                        dismissThresholds: const {
+                          DismissDirection.endToStart: 0.6, // Require 60% swipe to trigger
+                        },
                         confirmDismiss: (direction) async {
                           return await _showDeleteConfirmation(_reagents[i].name);
                         },

@@ -130,6 +130,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
   Map<String, double> _calculatedTotalVolumes = {};
   final Map<String, bool> _reagentInclusionStatus = {};
   bool _isEditMode = false;
+  bool _hasVolumeError = false;
   String _currentConfigurationName = 'Default Configuration';
 
   final List<Reagent> _reagents = [
@@ -191,10 +192,11 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
       double waterVolume = totalDesiredVolume - totalCalculatedVolumeExcludingWater;
 
       if (waterVolume < 0) {
-        _showErrorDialog('Calculated reagent volumes exceed total desired volume. Please check your inputs.');
-        // In edit mode, keep reagents visible but set water to 0 to show the problem
+        _hasVolumeError = true;
+        // Set water to 0 to show the problem, but keep reagents visible
         _calculatedTotalVolumes['Nuclease-Free Water'] = 0.0;
       } else {
+        _hasVolumeError = false;
         _calculatedTotalVolumes['Nuclease-Free Water'] = waterVolume;
       }
     });
@@ -411,13 +413,18 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
   }
 
   Widget _buildDisplayReagentRow(Reagent reagent) {
+    // Check if this is water and there's a volume error
+    bool isWaterWithError = reagent.name == 'Nuclease-Free Water' && _hasVolumeError;
+    
     return Row(
       children: [
         Expanded(
           flex: 3,
           child: Text(
             reagent.name,
-            style: CupertinoTheme.of(context).textTheme.textStyle,
+            style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
+              color: isWaterWithError ? CupertinoColors.destructiveRed : null,
+            ),
           ),
         ),
         Expanded(
@@ -426,17 +433,23 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
             formatVolume(_calculatedTotalVolumes[reagent.name]! / 
                 (int.tryParse(_numReactionsController.text) ?? 1)),
             textAlign: TextAlign.center,
-            style: CupertinoTheme.of(context).textTheme.textStyle,
+            style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
+              color: isWaterWithError ? CupertinoColors.destructiveRed : null,
+            ),
           ),
         ),
         Expanded(
           flex: 2,
           child: Text(
-            formatVolume(_calculatedTotalVolumes[reagent.name]!),
+            isWaterWithError && _calculatedTotalVolumes[reagent.name]! == 0.0
+                ? 'Error: Total exceeds volume'
+                : formatVolume(_calculatedTotalVolumes[reagent.name]!),
             textAlign: TextAlign.end,
             style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
               fontWeight: FontWeight.w600,
-              color: CupertinoColors.systemBlue,
+              color: isWaterWithError 
+                  ? CupertinoColors.destructiveRed 
+                  : CupertinoColors.systemBlue,
             ),
           ),
         ),

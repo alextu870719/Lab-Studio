@@ -1186,7 +1186,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                       Expanded(
                         flex: 2,
                         child: Text(
-                          'Vol/rxn',
+                          'µl/rxn',
                           textAlign: TextAlign.center,
                           style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
                             fontWeight: FontWeight.w600,
@@ -1230,7 +1230,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                       Expanded(
                         flex: 2,
                         child: Text(
-                          '50 µl rxn',
+                          '50 µl/rxn',
                           textAlign: TextAlign.center,
                           style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
                             fontWeight: FontWeight.w600,

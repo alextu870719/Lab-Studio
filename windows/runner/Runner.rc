@@ -90,12 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "com.example" "\0"
-            VALUE "FileDescription", "pcr_reagent_calculator" "\0"
+            VALUE "FileDescription", "Lab Studio" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "pcr_reagent_calculator" "\0"
+            VALUE "InternalName", "lab_studio" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2025 com.example. All rights reserved." "\0"
-            VALUE "OriginalFilename", "pcr_reagent_calculator.exe" "\0"
-            VALUE "ProductName", "pcr_reagent_calculator" "\0"
+            VALUE "OriginalFilename", "lab_studio.exe" "\0"
+            VALUE "ProductName", "Lab Studio" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

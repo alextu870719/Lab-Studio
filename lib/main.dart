@@ -947,7 +947,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
       navigationBar: CupertinoNavigationBar(
         middle: Text(
           'PCR Calculator',
-          style: TextStyle(color: CupertinoColors.label),
+          style: TextStyle(color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
         ),
         trailing: CupertinoButton(
           padding: EdgeInsets.zero,
@@ -957,7 +957,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
           child: Icon(
             CupertinoIcons.settings,
             size: 24,
-            color: CupertinoColors.label,
+            color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
           ),
         ),
       ),
@@ -1717,15 +1717,15 @@ class SettingsPage extends StatelessWidget {
                                     style: TextStyle(
                                       fontSize: 17,
                                       fontWeight: FontWeight.w600,
-                                      color: CupertinoColors.label,
+                                      color: isDarkMode ? CupertinoColors.white : CupertinoColors.black,
                                     ),
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
                                     isDarkMode ? 'Dark Mode' : 'Light Mode',
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 14,
-                                      color: CupertinoColors.secondaryLabel,
+                                      color: isDarkMode ? CupertinoColors.white : CupertinoColors.secondaryLabel,
                                     ),
                                   ),
                                 ],
@@ -1792,7 +1792,7 @@ class SettingsPage extends StatelessWidget {
                                     style: TextStyle(
                                       fontSize: 17,
                                       fontWeight: FontWeight.w600,
-                                      color: CupertinoColors.label,
+                                      color: isDarkMode ? CupertinoColors.white : CupertinoColors.black,
                                     ),
                                   ),
                                   const SizedBox(height: 2),
@@ -1800,7 +1800,7 @@ class SettingsPage extends StatelessWidget {
                                     'Version 1.0.0',
                                     style: TextStyle(
                                       fontSize: 14,
-                                      color: CupertinoColors.secondaryLabel,
+                                      color: isDarkMode ? CupertinoColors.white : CupertinoColors.secondaryLabel,
                                     ),
                                   ),
                                 ],

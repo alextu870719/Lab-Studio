@@ -413,18 +413,13 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
   }
 
   Widget _buildDisplayReagentRow(Reagent reagent) {
-    // Check if this is water and there's a volume error
-    bool isWaterWithError = reagent.name == 'Nuclease-Free Water' && _hasVolumeError;
-    
     return Row(
       children: [
         Expanded(
           flex: 3,
           child: Text(
             reagent.name,
-            style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
-              color: isWaterWithError ? CupertinoColors.destructiveRed : null,
-            ),
+            style: CupertinoTheme.of(context).textTheme.textStyle,
           ),
         ),
         Expanded(
@@ -433,23 +428,16 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
             formatVolume(_calculatedTotalVolumes[reagent.name]! / 
                 (int.tryParse(_numReactionsController.text) ?? 1)),
             textAlign: TextAlign.center,
-            style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
-              color: isWaterWithError ? CupertinoColors.destructiveRed : null,
-            ),
+            style: CupertinoTheme.of(context).textTheme.textStyle,
           ),
         ),
         Expanded(
           flex: 2,
           child: Text(
-            isWaterWithError && _calculatedTotalVolumes[reagent.name]! == 0.0
-                ? 'Error: Total exceeds volume'
-                : formatVolume(_calculatedTotalVolumes[reagent.name]!),
+            formatVolume(_calculatedTotalVolumes[reagent.name]!),
             textAlign: TextAlign.end,
             style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
               fontWeight: FontWeight.w600,
-              color: isWaterWithError 
-                  ? CupertinoColors.destructiveRed 
-                  : CupertinoColors.systemBlue,
             ),
           ),
         ),
@@ -704,12 +692,19 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                   ),
                 ),
                 CupertinoButton(
-                  onPressed: () {
+                  onPressed: _isEditMode && _hasVolumeError ? null : () {
                     setState(() {
                       _isEditMode = !_isEditMode;
                     });
                   },
-                  child: Text(_isEditMode ? 'Done' : 'Edit'),
+                  child: Text(
+                    _isEditMode ? 'Done' : 'Edit',
+                    style: TextStyle(
+                      color: _isEditMode && _hasVolumeError 
+                          ? CupertinoColors.destructiveRed
+                          : CupertinoColors.systemBlue,
+                    ),
+                  ),
                 ),
               ],
             ),

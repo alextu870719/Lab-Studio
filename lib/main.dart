@@ -1014,21 +1014,6 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
         middle: const Text('PCR Calculator'),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CupertinoButton(
-              padding: EdgeInsets.zero,
-              child: const Icon(CupertinoIcons.floppy_disk),
-              onPressed: _saveConfiguration,
-            ),
-            CupertinoButton(
-              padding: EdgeInsets.zero,
-              child: const Icon(CupertinoIcons.folder_open),
-              onPressed: _loadConfiguration,
-            ),
-          ],
-        ),
       ),
       child: GestureDetector(
         onTap: () {
@@ -1133,41 +1118,77 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
             ),
             const SizedBox(height: 16),
 
-            // Configuration Name and Edit Button
+            // Configuration Name and Action Buttons
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(
-                  child: Text(
-                    _currentConfigurationName,
-                    style: CupertinoTheme.of(context).textTheme.navLargeTitleTextStyle.copyWith(
-                      fontSize: 20,
-                      color: CupertinoColors.label,
+                  child: CupertinoButton(
+                    padding: EdgeInsets.zero,
+                    onPressed: () {
+                      _loadConfiguration();
+                    },
+                    child: Container(
+                      alignment: Alignment.centerLeft,
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              _currentConfigurationName,
+                              style: CupertinoTheme.of(context).textTheme.navLargeTitleTextStyle.copyWith(
+                                fontSize: 20,
+                                color: CupertinoColors.label,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          const Icon(
+                            CupertinoIcons.chevron_down,
+                            color: CupertinoColors.systemBlue,
+                            size: 16,
+                          ),
+                        ],
+                      ),
                     ),
-                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                CupertinoButton(
-                  onPressed: _isEditMode && _hasVolumeError ? null : () {
-                    setState(() {
-                      if (_isEditMode) {
-                        // 退出編輯模式時，確保所有變更都已同步
-                        _syncEditControllersToReagents();
-                      } else {
-                        // 進入編輯模式時，重新初始化控制器
-                        _initializeEditControllers();
-                      }
-                      _isEditMode = !_isEditMode;
-                    });
-                  },
-                  child: Text(
-                    _isEditMode ? 'Done' : 'Edit',
-                    style: TextStyle(
-                      color: _isEditMode && _hasVolumeError 
-                          ? CupertinoColors.destructiveRed
-                          : CupertinoColors.systemBlue,
+                Row(
+                  children: [
+                    CupertinoButton(
+                      onPressed: () {
+                        _saveConfiguration();
+                      },
+                      child: const Text(
+                        'Save',
+                        style: TextStyle(
+                          color: CupertinoColors.systemBlue,
+                        ),
+                      ),
                     ),
-                  ),
+                    CupertinoButton(
+                      onPressed: _isEditMode && _hasVolumeError ? null : () {
+                        setState(() {
+                          if (_isEditMode) {
+                            // 退出編輯模式時，確保所有變更都已同步
+                            _syncEditControllersToReagents();
+                          } else {
+                            // 進入編輯模式時，重新初始化控制器
+                            _initializeEditControllers();
+                          }
+                          _isEditMode = !_isEditMode;
+                        });
+                      },
+                      child: Text(
+                        _isEditMode ? 'Done' : 'Edit',
+                        style: TextStyle(
+                          color: _isEditMode && _hasVolumeError 
+                              ? CupertinoColors.destructiveRed
+                              : CupertinoColors.systemBlue,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

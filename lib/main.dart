@@ -124,7 +124,7 @@ class PcrCalculatorPage extends StatefulWidget {
 }
 
 class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
-  final TextEditingController _numReactionsController = TextEditingController(text: '1');
+  final TextEditingController _numReactionsController = TextEditingController();
   final TextEditingController _customReactionVolumeController = TextEditingController(text: '50.0');
   final TextEditingController _templateDnaVolumeController = TextEditingController(text: '0.0');
 
@@ -272,7 +272,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
   }
 
   void _clearAllInputs() {
-    _numReactionsController.text = '1';
+    _numReactionsController.clear();
     _customReactionVolumeController.text = '50.0';
     _templateDnaVolumeController.clear();
     

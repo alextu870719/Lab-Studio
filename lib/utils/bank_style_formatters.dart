@@ -111,14 +111,6 @@ class BankStyleIntegerFormatter extends TextInputFormatter {
     TextEditingValue oldValue,
     TextEditingValue newValue,
   ) {
-    // 初始化預設值
-    if (oldValue.text.isEmpty) {
-      return const TextEditingValue(
-        text: '1',
-        selection: TextSelection.collapsed(offset: 1),
-      );
-    }
-    
     String newText = newValue.text;
     String oldText = oldValue.text;
     

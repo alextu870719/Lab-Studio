@@ -549,11 +549,17 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
 
   void _addNewReagent() {
     setState(() {
-      _reagents.add(Reagent(
-        name: 'New Reagent',
+      String newReagentName = 'New Reagent ${_reagents.length + 1}';
+      Reagent newReagent = Reagent(
+        name: newReagentName,
         proportion: 1.0 / 25.0,
         isOptional: true,
-      ));
+      );
+      _reagents.add(newReagent);
+      
+      // Initialize the inclusion status for the new optional reagent
+      _reagentInclusionStatus[newReagentName] = true; // Default to included
+      
       _calculateVolumes();
     });
   }

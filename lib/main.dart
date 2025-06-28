@@ -34,28 +34,24 @@ class Reagent {
   final String name;
   final double proportion;
   final bool isOptional;
-  final bool isVariable;
 
   Reagent({
     String? id,  // 可選 ID，如果未提供則自動生成
     required this.name,
     required this.proportion,
     this.isOptional = false,
-    this.isVariable = false,
   }) : id = id ?? DateTime.now().millisecondsSinceEpoch.toString() + name.hashCode.toString();
 
   Reagent copyWith({
     String? name,
     double? proportion,
     bool? isOptional,
-    bool? isVariable,
   }) {
     return Reagent(
       id: this.id,  // 保持相同的 ID
       name: name ?? this.name,
       proportion: proportion ?? this.proportion,
       isOptional: isOptional ?? this.isOptional,
-      isVariable: isVariable ?? this.isVariable,
     );
   }
 
@@ -65,7 +61,6 @@ class Reagent {
       'name': name,
       'proportion': proportion,
       'isOptional': isOptional,
-      'isVariable': isVariable,
     };
   }
 
@@ -75,7 +70,6 @@ class Reagent {
       name: json['name'] ?? '',
       proportion: (json['proportion'] ?? 0.0).toDouble(),
       isOptional: json['isOptional'] ?? false,
-      isVariable: json['isVariable'] ?? false,
     );
   }
 }
@@ -145,7 +139,6 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
     Reagent(id: 'dntps', name: '10 mM dNTPs', proportion: 4.0 / 50.0),
     Reagent(id: 'forward_primer', name: '10 µM Forward Primer', proportion: 5.0 / 50.0),
     Reagent(id: 'reverse_primer', name: '10 µM Reverse Primer', proportion: 5.0 / 50.0),
-    Reagent(id: 'template_dna', name: 'Template DNA', proportion: 0.0, isVariable: true),
     Reagent(id: 'polymerase', name: 'Q5 High-Fidelity DNA Polymerase', proportion: 1.0 / 50.0),
     Reagent(id: 'gc_enhancer', name: '5X Q5 High GC Enhancer (optional)', proportion: 10.0 / 50.0, isOptional: true),
     Reagent(id: 'water', name: 'Nuclease-Free Water', proportion: 0.0),
@@ -206,18 +199,19 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
 
       double totalCalculatedVolumeExcludingWater = 0.0;
 
+      // 先計算 Template DNA（從上方輸入欄位）
+      double templateDnaVolume = double.tryParse(_templateDnaVolumeController.text) ?? 0.0;
+      if (templateDnaVolume > 0) {
+        double totalTemplateDna = templateDnaVolume * numReactions;
+        _calculatedTotalVolumes['Template DNA'] = totalTemplateDna;
+        totalCalculatedVolumeExcludingWater += totalTemplateDna;
+      }
+
+      // 計算其他試劑
       for (var reagent in _reagents) {
         if (reagent.name == 'Nuclease-Free Water') continue;
 
-        double singleReactionVolume;
-        if (reagent.isVariable) {
-          // For Template DNA, use 0 if empty or invalid, no error dialog
-          double parsedVolume = double.tryParse(_templateDnaVolumeController.text) ?? 0.0;
-          singleReactionVolume = parsedVolume;
-        } else {
-          singleReactionVolume = reagent.proportion * totalVolumePerReaction;
-        }
-
+        double singleReactionVolume = reagent.proportion * totalVolumePerReaction;
         double totalReagentVolume = singleReactionVolume * numReactions;
         _calculatedTotalVolumes[reagent.name] = totalReagentVolume;
         totalCalculatedVolumeExcludingWater += totalReagentVolume;
@@ -611,47 +605,30 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
               ),
             ),
             const SizedBox(width: 8),
-            if (!reagent.isVariable) ...[
-              Expanded(
-                flex: 2,
-                child: CupertinoTextField(
-                  key: ValueKey('volume_$index'),
-                  placeholder: 'Volume',
-                  controller: _reagentVolumeControllers[index],
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [BankStyleDecimalFormatter(decimalPlaces: 1, maxDigits: 5)],
-                  onSubmitted: (value) {
-                    double? newVolume = double.tryParse(value);
-                    if (newVolume != null) {
-                      setState(() {
-                        _reagents[index] = reagent.copyWith(proportion: newVolume / 50.0);
-                        _calculateVolumes();
-                      });
-                    }
-                  },
-                  decoration: BoxDecoration(
-                    color: CupertinoColors.tertiarySystemBackground,
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
-                  padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
+            Expanded(
+              flex: 2,
+              child: CupertinoTextField(
+                key: ValueKey('volume_$index'),
+                placeholder: 'Volume',
+                controller: _reagentVolumeControllers[index],
+                keyboardType: TextInputType.number,
+                inputFormatters: [BankStyleDecimalFormatter(decimalPlaces: 1, maxDigits: 5)],
+                onSubmitted: (value) {
+                  double? newVolume = double.tryParse(value);
+                  if (newVolume != null) {
+                    setState(() {
+                      _reagents[index] = reagent.copyWith(proportion: newVolume / 50.0);
+                      _calculateVolumes();
+                    });
+                  }
+                },
+                decoration: BoxDecoration(
+                  color: CupertinoColors.tertiarySystemBackground,
+                  borderRadius: BorderRadius.circular(8.0),
                 ),
+                padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
               ),
-            ] else ...[
-              Expanded(
-                flex: 2,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 12.0),
-                  decoration: BoxDecoration(
-                    color: CupertinoColors.secondarySystemBackground,
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
-                  child: Text(
-                    'Variable',
-                    style: TextStyle(color: CupertinoColors.secondaryLabel),
-                  ),
-                ),
-              ),
-            ],
+            ),
           ],
         ),
       ],
@@ -713,34 +690,6 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
         );
       },
     );
-  }
-
-  // 清理損壞的配置 - 如果需要的話可以手動調用
-  Future<void> _cleanInvalidConfigurations() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      List<String> configStrings = prefs.getStringList('saved_configurations') ?? [];
-      List<String> validConfigs = [];
-      int removedCount = 0;
-      
-      for (String configString in configStrings) {
-        try {
-          jsonDecode(configString.trim());
-          validConfigs.add(configString);
-        } catch (e) {
-          removedCount++;
-        }
-      }
-      
-      if (removedCount > 0) {
-        await prefs.setStringList('saved_configurations', validConfigs);
-        _showErrorDialog('Cleaned $removedCount invalid configurations.');
-      } else {
-        _showErrorDialog('No invalid configurations found.');
-      }
-    } catch (e) {
-      _showErrorDialog('Failed to clean configurations: $e');
-    }
   }
 
   @override

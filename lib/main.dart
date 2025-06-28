@@ -5,6 +5,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:flutter/services.dart';
 import 'package:pcr_reagent_calculator/utils/format_utils.dart';
+import 'package:pcr_reagent_calculator/utils/bank_style_formatters.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
@@ -131,7 +132,7 @@ class PcrCalculatorPage extends StatefulWidget {
 class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
   final TextEditingController _numReactionsController = TextEditingController(text: '1');
   final TextEditingController _customReactionVolumeController = TextEditingController(text: '50.0');
-  final TextEditingController _templateDnaVolumeController = TextEditingController();
+  final TextEditingController _templateDnaVolumeController = TextEditingController(text: '0.0');
 
   Map<String, double> _calculatedTotalVolumes = {};
   final Map<String, bool> _reagentInclusionStatus = {};
@@ -170,7 +171,9 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
     
     for (int i = 0; i < _reagents.length; i++) {
       _reagentNameControllers.add(TextEditingController(text: _reagents[i].name));
-      _reagentVolumeControllers.add(TextEditingController(text: (_reagents[i].proportion * 50.0).toString()));
+      double volume = _reagents[i].proportion * 50.0;
+      String formattedVolume = volume.toStringAsFixed(1);
+      _reagentVolumeControllers.add(TextEditingController(text: formattedVolume));
     }
   }
 
@@ -494,7 +497,9 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
     // Ensure controllers exist for this index
     while (_reagentNameControllers.length <= index) {
       _reagentNameControllers.add(TextEditingController(text: _reagents[_reagentNameControllers.length].name));
-      _reagentVolumeControllers.add(TextEditingController(text: (_reagents[_reagentVolumeControllers.length].proportion * 50.0).toString()));
+      double volume = _reagents[_reagentVolumeControllers.length].proportion * 50.0;
+      String formattedVolume = volume.toStringAsFixed(1);
+      _reagentVolumeControllers.add(TextEditingController(text: formattedVolume));
     }
 
     return Column(
@@ -530,6 +535,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                   placeholder: 'Volume',
                   controller: _reagentVolumeControllers[index],
                   keyboardType: TextInputType.number,
+                  inputFormatters: [BankStyleDecimalFormatter(decimalPlaces: 1, maxDigits: 5)],
                   onSubmitted: (value) {
                     double? newVolume = double.tryParse(value);
                     if (newVolume != null) {
@@ -580,7 +586,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
       
       // Add new controllers for the added reagent
       _reagentNameControllers.add(TextEditingController(text: newReagentName));
-      _reagentVolumeControllers.add(TextEditingController(text: (1.0).toString()));
+      _reagentVolumeControllers.add(TextEditingController(text: '1.0'));
       
       _calculateVolumes();
     });
@@ -646,7 +652,12 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
           ],
         ),
       ),
-      child: SafeArea(
+      child: GestureDetector(
+        onTap: () {
+          // 點擊空白處時關閉鍵盤
+          FocusScope.of(context).unfocus();
+        },
+        child: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(16.0),
           children: [
@@ -675,6 +686,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                           controller: _numReactionsController,
                           placeholder: 'Number of Reactions',
                           keyboardType: TextInputType.number,
+                          inputFormatters: [BankStyleIntegerFormatter(maxDigits: 3)],
                           decoration: BoxDecoration(
                             color: CupertinoColors.tertiarySystemBackground,
                             borderRadius: BorderRadius.circular(8.0),
@@ -689,6 +701,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                           controller: _customReactionVolumeController,
                           placeholder: 'Reaction Volume (µl)',
                           keyboardType: TextInputType.number,
+                          inputFormatters: [BankStyleDecimalFormatter(decimalPlaces: 1, maxDigits: 5)],
                           decoration: BoxDecoration(
                             color: CupertinoColors.tertiarySystemBackground,
                             borderRadius: BorderRadius.circular(8.0),
@@ -704,6 +717,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                     controller: _templateDnaVolumeController,
                     placeholder: 'Template DNA Volume (µl)',
                     keyboardType: TextInputType.number,
+                    inputFormatters: [BankStyleDecimalFormatter(decimalPlaces: 1, maxDigits: 5)],
                     decoration: BoxDecoration(
                       color: CupertinoColors.tertiarySystemBackground,
                       borderRadius: BorderRadius.circular(8.0),
@@ -929,7 +943,8 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
             ],
           ],
         ),
-      ),
+      ), // SafeArea
+      ), // GestureDetector
     );
   }
 }

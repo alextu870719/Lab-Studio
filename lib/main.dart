@@ -513,15 +513,6 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                 ),
               ),
             ],
-            const SizedBox(width: 8),
-            CupertinoButton(
-              padding: EdgeInsets.zero,
-              onPressed: () => _deleteReagent(index),
-              child: const Icon(
-                CupertinoIcons.delete,
-                color: CupertinoColors.destructiveRed,
-              ),
-            ),
           ],
         ),
         const SizedBox(height: 8),
@@ -542,6 +533,14 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
             ] else ...[
               const Text('Required reagent'),
             ],
+            const Spacer(),
+            Text(
+              'Swipe left to delete',
+              style: TextStyle(
+                color: CupertinoColors.secondaryLabel,
+                fontSize: 12,
+              ),
+            ),
           ],
         ),
       ],
@@ -568,6 +567,29 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
         _calculateVolumes();
       });
     }
+  }
+
+  Future<bool?> _showDeleteConfirmation(String reagentName) async {
+    return await showCupertinoDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return CupertinoAlertDialog(
+          title: const Text('Delete Reagent'),
+          content: Text('Are you sure you want to delete "$reagentName"?'),
+          actions: [
+            CupertinoDialogAction(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            CupertinoDialogAction(
+              isDestructiveAction: true,
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -716,21 +738,57 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
             if (_calculatedTotalVolumes.isNotEmpty) ...[
               for (var i = 0; i < _reagents.length; i++)
                 if (_calculatedTotalVolumes.containsKey(_reagents[i].name))
-                  Container(
-                    margin: const EdgeInsets.symmetric(vertical: 4.0),
-                    decoration: BoxDecoration(
-                      color: CupertinoColors.systemBackground,
-                      borderRadius: BorderRadius.circular(12.0),
-                      border: Border.all(
-                        color: CupertinoColors.separator,
-                        width: 0.5,
+                  _isEditMode 
+                    ? Dismissible(
+                        key: Key('reagent_$i'),
+                        direction: DismissDirection.endToStart,
+                        confirmDismiss: (direction) async {
+                          return await _showDeleteConfirmation(_reagents[i].name);
+                        },
+                        onDismissed: (direction) {
+                          _deleteReagent(i);
+                        },
+                        background: Container(
+                          margin: const EdgeInsets.symmetric(vertical: 4.0),
+                          decoration: BoxDecoration(
+                            color: CupertinoColors.destructiveRed,
+                            borderRadius: BorderRadius.circular(12.0),
+                          ),
+                          alignment: Alignment.centerRight,
+                          padding: const EdgeInsets.only(right: 20.0),
+                          child: const Icon(
+                            CupertinoIcons.delete,
+                            color: CupertinoColors.white,
+                            size: 24,
+                          ),
+                        ),
+                        child: Container(
+                          margin: const EdgeInsets.symmetric(vertical: 4.0),
+                          decoration: BoxDecoration(
+                            color: CupertinoColors.systemBackground,
+                            borderRadius: BorderRadius.circular(12.0),
+                            border: Border.all(
+                              color: CupertinoColors.separator,
+                              width: 0.5,
+                            ),
+                          ),
+                          padding: const EdgeInsets.all(16.0),
+                          child: _buildEditableReagentRow(_reagents[i], i),
+                        ),
+                      )
+                    : Container(
+                        margin: const EdgeInsets.symmetric(vertical: 4.0),
+                        decoration: BoxDecoration(
+                          color: CupertinoColors.systemBackground,
+                          borderRadius: BorderRadius.circular(12.0),
+                          border: Border.all(
+                            color: CupertinoColors.separator,
+                            width: 0.5,
+                          ),
+                        ),
+                        padding: const EdgeInsets.all(16.0),
+                        child: _buildDisplayReagentRow(_reagents[i]),
                       ),
-                    ),
-                    padding: const EdgeInsets.all(16.0),
-                    child: _isEditMode 
-                        ? _buildEditableReagentRow(_reagents[i], i)
-                        : _buildDisplayReagentRow(_reagents[i]),
-                  ),
               
               // Add new reagent button in edit mode
               if (_isEditMode)

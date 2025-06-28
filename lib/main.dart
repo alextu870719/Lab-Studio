@@ -1469,7 +1469,7 @@ class _ConfigurationSelectorState extends State<ConfigurationSelector> {
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w600,
-                    color: CupertinoColors.label,
+                    color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
                   ),
                 ),
                 CupertinoButton(

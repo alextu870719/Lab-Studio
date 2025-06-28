@@ -1,8 +1,8 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
-import 'package:flutter/services.dart'; // Import for Clipboard
+import 'package:flutter/services.dart';
 import 'package:pcr_reagent_calculator/utils/format_utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
@@ -29,9 +29,9 @@ class MyApp extends StatelessWidget {
 
 class Reagent {
   final String name;
-  final double proportion; // Changed from fixedVolume to proportion
+  final double proportion;
   final bool isOptional;
-  final bool isVariable; // For Template DNA
+  final bool isVariable;
 
   Reagent({
     required this.name,
@@ -128,17 +128,16 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
   final TextEditingController _templateDnaVolumeController = TextEditingController();
 
   Map<String, double> _calculatedTotalVolumes = {};
-  
-  
-  final Map<String, bool> _reagentInclusionStatus = {}; // New map to manage inclusion status
+  final Map<String, bool> _reagentInclusionStatus = {};
   bool _isEditMode = false;
+  String _currentConfigurationName = 'Default Configuration';
 
   final List<Reagent> _reagents = [
     Reagent(name: '5X Q5 Reaction Buffer', proportion: 5.0 / 25.0),
     Reagent(name: '10 mM dNTPs', proportion: 2.0 / 25.0),
     Reagent(name: '10 µM Forward Primer', proportion: 2.5 / 25.0),
     Reagent(name: '10 µM Reverse Primer', proportion: 2.5 / 25.0),
-    Reagent(name: 'Template DNA', proportion: 0.0, isVariable: true), // Volume will be from user input
+    Reagent(name: 'Template DNA', proportion: 0.0, isVariable: true),
     Reagent(name: 'Q5 High-Fidelity DNA Polymerase', proportion: 0.5 / 25.0),
     Reagent(name: '5X Q5 High GC Enhancer (optional)', proportion: 5.0 / 25.0, isOptional: true),
     Reagent(name: 'Nuclease-Free Water', proportion: 0.0),
@@ -147,13 +146,12 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
   @override
   void initState() {
     super.initState();
-    // Initialize inclusion status for optional reagents
     for (var reagent in _reagents) {
       if (reagent.isOptional) {
-        _reagentInclusionStatus[reagent.name] = false; // Default to not included
+        _reagentInclusionStatus[reagent.name] = false;
       }
     }
-    _calculateVolumes(); // Initial calculation
+    _calculateVolumes();
   }
 
   @override
@@ -168,7 +166,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
     setState(() {
       _calculatedTotalVolumes.clear();
       int numReactions = int.tryParse(_numReactionsController.text) ?? 1;
-      if (numReactions <= 0) numReactions = 1; // Ensure at least 1 reaction
+      if (numReactions <= 0) numReactions = 1;
 
       double totalVolumePerReaction = double.tryParse(_customReactionVolumeController.text) ?? 0.0;
 
@@ -181,7 +179,6 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
 
       for (var reagent in _reagents) {
         if (reagent.name == 'Nuclease-Free Water') continue;
-        // Check inclusion status from the new map
         if (reagent.isOptional && !(_reagentInclusionStatus[reagent.name] ?? false)) continue;
 
         double singleReactionVolume;
@@ -191,7 +188,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
              _showErrorDialog('Please enter a valid number for Template DNA volume.');
              return;
           }
-          singleReactionVolume = parsedVolume ?? 0.0; // Default to 0 if not entered
+          singleReactionVolume = parsedVolume ?? 0.0;
         } else {
           singleReactionVolume = reagent.proportion * totalVolumePerReaction;
         }
@@ -205,8 +202,8 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
       double waterVolume = totalDesiredVolume - totalCalculatedVolumeExcludingWater;
 
       if (waterVolume < 0) {
-        _showErrorDialog('Calculated reagent volumes exceed total desired volume. Please check your inputs, especially Template DNA.');
-        _calculatedTotalVolumes.clear(); // Clear results on error
+        _showErrorDialog('Calculated reagent volumes exceed total desired volume. Please check your inputs.');
+        _calculatedTotalVolumes.clear();
       } else {
         _calculatedTotalVolumes['Nuclease-Free Water'] = waterVolume;
       }
@@ -214,14 +211,14 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
   }
 
   void _showErrorDialog(String message) {
-    showDialog(
+    showCupertinoDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
+        return CupertinoAlertDialog(
           title: const Text('Input Error'),
           content: Text(message),
           actions: <Widget>[
-            TextButton(
+            CupertinoDialogAction(
               onPressed: () {
                 Navigator.of(context).pop();
               },
@@ -239,13 +236,152 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
     _templateDnaVolumeController.clear();
     setState(() {
       _calculatedTotalVolumes.clear();
-      // Reset inclusion status for optional reagents
       for (var reagent in _reagents) {
         if (reagent.isOptional) {
-          _reagentInclusionStatus[reagent.name] = false; // Default to not included
+          _reagentInclusionStatus[reagent.name] = false;
         }
       }
     });
+  }
+
+  Future<void> _saveConfiguration() async {
+    final TextEditingController nameController = TextEditingController(text: _currentConfigurationName);
+    
+    await showCupertinoDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return CupertinoAlertDialog(
+          title: const Text('Save Configuration'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 16),
+              CupertinoTextField(
+                controller: nameController,
+                placeholder: 'Configuration Name',
+              ),
+            ],
+          ),
+          actions: [
+            CupertinoDialogAction(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            CupertinoDialogAction(
+              onPressed: () async {
+                if (nameController.text.trim().isNotEmpty) {
+                  Navigator.of(context).pop();
+                  await _saveConfigurationWithName(nameController.text.trim());
+                }
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _saveConfigurationWithName(String name) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      
+      final config = PcrConfiguration(
+        name: name,
+        numReactions: int.tryParse(_numReactionsController.text) ?? 1,
+        reactionVolume: double.tryParse(_customReactionVolumeController.text) ?? 25.0,
+        templateDnaVolume: double.tryParse(_templateDnaVolumeController.text) ?? 0.0,
+        reagents: _reagents,
+        reagentInclusionStatus: _reagentInclusionStatus,
+      );
+      
+      List<String> existingConfigs = prefs.getStringList('saved_configurations') ?? [];
+      existingConfigs.add(jsonEncode(config.toJson()));
+      await prefs.setStringList('saved_configurations', existingConfigs);
+      
+      setState(() {
+        _currentConfigurationName = name;
+      });
+    } catch (e) {
+      _showErrorDialog('Failed to save configuration: $e');
+    }
+  }
+
+  Future<void> _loadConfiguration() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      List<String> configStrings = prefs.getStringList('saved_configurations') ?? [];
+      
+      if (configStrings.isEmpty) {
+        _showErrorDialog('No saved configurations found.');
+        return;
+      }
+      
+      List<PcrConfiguration> configs = configStrings
+          .map((configString) => PcrConfiguration.fromJson(jsonDecode(configString)))
+          .toList();
+      
+      await showCupertinoModalPopup(
+        context: context,
+        builder: (BuildContext context) {
+          return CupertinoActionSheet(
+            title: const Text('Load Configuration'),
+            actions: configs.map((config) {
+              return CupertinoActionSheetAction(
+                onPressed: () {
+                  _applyConfiguration(config);
+                  Navigator.of(context).pop();
+                },
+                child: Text(config.name),
+              );
+            }).toList(),
+            cancelButton: CupertinoActionSheetAction(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+          );
+        },
+      );
+    } catch (e) {
+      _showErrorDialog('Failed to load configurations: $e');
+    }
+  }
+
+  void _applyConfiguration(PcrConfiguration config) {
+    setState(() {
+      _numReactionsController.text = config.numReactions.toString();
+      _customReactionVolumeController.text = config.reactionVolume.toString();
+      _templateDnaVolumeController.text = config.templateDnaVolume.toString();
+      
+      _reagents.clear();
+      _reagents.addAll(config.reagents);
+      
+      _reagentInclusionStatus.clear();
+      _reagentInclusionStatus.addAll(config.reagentInclusionStatus);
+      
+      _currentConfigurationName = config.name;
+      
+      _calculateVolumes();
+    });
+  }
+
+  void _copyResults() {
+    if (_calculatedTotalVolumes.isEmpty) {
+      _showErrorDialog('Please calculate the reagent volumes first.');
+      return;
+    }
+
+    final StringBuffer buffer = StringBuffer();
+    buffer.writeln('PCR Reagent Calculation');
+    buffer.writeln('Number of Reactions: ${_numReactionsController.text}');
+    buffer.writeln('Custom Reaction Volume: ${_customReactionVolumeController.text} µl');
+    buffer.writeln('');
+    buffer.writeln('Calculated Total Volumes (µl):');
+    _calculatedTotalVolumes.forEach((key, value) {
+      buffer.writeln('$key: ${formatVolume(value)}');
+    });
+
+    Clipboard.setData(ClipboardData(text: buffer.toString()));
   }
 
   Future<void> _printResults() async {
@@ -284,211 +420,11 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
     await Printing.sharePdf(bytes: await doc.save(), filename: 'pcr_reagent_calculation.pdf');
   }
 
-  void _copyResults() {
-    if (_calculatedTotalVolumes.isEmpty) {
-      _showErrorDialog('Please calculate the reagent volumes first.');
-      return;
-    }
-
-    final StringBuffer buffer = StringBuffer();
-    buffer.writeln('PCR Reagent Calculation');
-    buffer.writeln('Number of Reactions: ${_numReactionsController.text}');
-    buffer.writeln('Custom Reaction Volume: ${_customReactionVolumeController.text} µl');
-    buffer.writeln('');
-    buffer.writeln('Calculated Total Volumes (µl):');
-    buffer.writeln('Component\tTotal Volume (µl)');
-    _calculatedTotalVolumes.forEach((key, value) {
-      buffer.writeln('$key\t${formatVolume(value)}');
-    });
-
-    Clipboard.setData(ClipboardData(text: buffer.toString()));
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Results copied to clipboard!')),
-    );
-  }
-
-  Future<void> _saveConfiguration() async {
-    final TextEditingController nameController = TextEditingController();
-    
-    await showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Save Configuration'),
-          content: TextField(
-            controller: nameController,
-            decoration: const InputDecoration(
-              labelText: 'Configuration Name',
-              hintText: 'Enter a name for this configuration',
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () async {
-                if (nameController.text.trim().isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Please enter a configuration name')),
-                  );
-                  return;
-                }
-                
-                Navigator.of(context).pop();
-                await _saveConfigurationWithName(nameController.text.trim());
-              },
-              child: const Text('Save'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Future<void> _saveConfigurationWithName(String name) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      
-      final config = PcrConfiguration(
-        name: name,
-        numReactions: int.tryParse(_numReactionsController.text) ?? 1,
-        reactionVolume: double.tryParse(_customReactionVolumeController.text) ?? 25.0,
-        templateDnaVolume: double.tryParse(_templateDnaVolumeController.text) ?? 0.0,
-        reagents: _reagents,
-        reagentInclusionStatus: _reagentInclusionStatus,
-      );
-      
-      // Get existing configurations
-      List<String> existingConfigs = prefs.getStringList('saved_configurations') ?? [];
-      
-      // Add new configuration
-      existingConfigs.add(jsonEncode(config.toJson()));
-      
-      // Save back to preferences
-      await prefs.setStringList('saved_configurations', existingConfigs);
-      
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Configuration "$name" saved successfully')),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        _showErrorDialog('Failed to save configuration: $e');
-      }
-    }
-  }
-
-  Future<void> _loadConfiguration() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      List<String> configStrings = prefs.getStringList('saved_configurations') ?? [];
-      
-      if (configStrings.isEmpty) {
-        _showErrorDialog('No saved configurations found.');
-        return;
-      }
-      
-      List<PcrConfiguration> configs = configStrings
-          .map((configString) => PcrConfiguration.fromJson(jsonDecode(configString)))
-          .toList();
-      
-      await showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text('Load Configuration'),
-            content: SizedBox(
-              width: double.maxFinite,
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: configs.length,
-                itemBuilder: (context, index) {
-                  final config = configs[index];
-                  return ListTile(
-                    title: Text(config.name),
-                    subtitle: Text('${config.numReactions} reactions, ${config.reactionVolume}µl each'),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.delete),
-                      onPressed: () async {
-                        await _deleteConfiguration(index);
-                        Navigator.of(context).pop();
-                        _loadConfiguration(); // Refresh the dialog
-                      },
-                    ),
-                    onTap: () {
-                      _applyConfiguration(config);
-                      Navigator.of(context).pop();
-                    },
-                  );
-                },
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Cancel'),
-              ),
-            ],
-          );
-        },
-      );
-    } catch (e) {
-      _showErrorDialog('Failed to load configurations: $e');
-    }
-  }
-
-  Future<void> _deleteConfiguration(int index) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      List<String> configStrings = prefs.getStringList('saved_configurations') ?? [];
-      
-      if (index >= 0 && index < configStrings.length) {
-        configStrings.removeAt(index);
-        await prefs.setStringList('saved_configurations', configStrings);
-        
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Configuration deleted')),
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        _showErrorDialog('Failed to delete configuration: $e');
-      }
-    }
-  }
-
-  void _applyConfiguration(PcrConfiguration config) {
-    setState(() {
-      _numReactionsController.text = config.numReactions.toString();
-      _customReactionVolumeController.text = config.reactionVolume.toString();
-      _templateDnaVolumeController.text = config.templateDnaVolume.toString();
-      
-      // Apply reagents
-      _reagents.clear();
-      _reagents.addAll(config.reagents);
-      
-      // Apply inclusion status
-      _reagentInclusionStatus.clear();
-      _reagentInclusionStatus.addAll(config.reagentInclusionStatus);
-      
-      _calculateVolumes();
-    });
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Configuration "${config.name}" loaded')),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
-        middle: const Text('PCR Reagent Calculator'),
+        middle: const Text('PCR Calculator'),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -506,99 +442,115 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
         ),
       ),
       child: SafeArea(
-        child: Padding(
+        child: ListView(
           padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Container(
-                decoration: BoxDecoration(
-                  color: CupertinoColors.systemBackground,
-                  borderRadius: BorderRadius.circular(12.0),
-                ),
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'PCR Parameters',
-                      style: Theme.of(context).textTheme.headlineSmall,
+          children: [
+            // Parameters Section
+            Container(
+              decoration: BoxDecoration(
+                color: CupertinoColors.systemBackground,
+                borderRadius: BorderRadius.circular(12.0),
+              ),
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'PCR Parameters',
+                    style: CupertinoTheme.of(context).textTheme.navLargeTitleTextStyle.copyWith(
+                      fontSize: 20,
+                      color: CupertinoColors.label,
                     ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _numReactionsController,
-                            decoration: const InputDecoration(
-                              labelText: 'Number of Reactions',
-                            ),
-                            keyboardType: TextInputType.number,
-                            onChanged: (value) => _calculateVolumes(),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: CupertinoTextField(
+                          controller: _numReactionsController,
+                          placeholder: 'Number of Reactions',
+                          keyboardType: TextInputType.number,
+                          decoration: BoxDecoration(
+                            color: CupertinoColors.tertiarySystemBackground,
+                            borderRadius: BorderRadius.circular(8.0),
                           ),
+                          padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 12.0),
+                          onChanged: (value) => _calculateVolumes(),
                         ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: TextField(
-                            controller: _customReactionVolumeController,
-                            decoration: const InputDecoration(
-                              labelText: 'Reaction Volume (µl)',
-                            ),
-                            keyboardType: TextInputType.number,
-                            onChanged: (value) => _calculateVolumes(),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: _templateDnaVolumeController,
-                      decoration: const InputDecoration(
-                        labelText: 'Template DNA Volume (µl)',
-                        hintText: 'Enter volume per reaction',
                       ),
-                      keyboardType: TextInputType.number,
-                      onChanged: (value) => _calculateVolumes(),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: CupertinoTextField(
+                          controller: _customReactionVolumeController,
+                          placeholder: 'Reaction Volume (µl)',
+                          keyboardType: TextInputType.number,
+                          decoration: BoxDecoration(
+                            color: CupertinoColors.tertiarySystemBackground,
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 12.0),
+                          onChanged: (value) => _calculateVolumes(),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  CupertinoTextField(
+                    controller: _templateDnaVolumeController,
+                    placeholder: 'Template DNA Volume (µl)',
+                    keyboardType: TextInputType.number,
+                    decoration: BoxDecoration(
+                      color: CupertinoColors.tertiarySystemBackground,
+                      borderRadius: BorderRadius.circular(8.0),
                     ),
-                    const SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: _clearAllInputs,
-                            child: const Text('Clear'),
-                          ),
+                    padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 12.0),
+                    onChanged: (value) => _calculateVolumes(),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: CupertinoButton.filled(
+                          onPressed: _clearAllInputs,
+                          child: const Text('Clear'),
                         ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: _printResults,
-                            child: const Text('Print'),
-                          ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: CupertinoButton.filled(
+                          onPressed: _printResults,
+                          child: const Text('Print'),
                         ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: _copyResults,
-                            child: const Text('Copy'),
-                          ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: CupertinoButton.filled(
+                          onPressed: _copyResults,
+                          child: const Text('Copy'),
                         ),
-                      ],
-                    ),
-                  ],
-                ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 16),
+
+            // Configuration Name and Edit Button
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Reagent Components',
-                  style: Theme.of(context).textTheme.headlineSmall,
+                Expanded(
+                  child: Text(
+                    _currentConfigurationName,
+                    style: CupertinoTheme.of(context).textTheme.navLargeTitleTextStyle.copyWith(
+                      fontSize: 20,
+                      color: CupertinoColors.label,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-                ElevatedButton(
+                CupertinoButton(
                   onPressed: () {
                     setState(() {
                       _isEditMode = !_isEditMode;
@@ -609,183 +561,64 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
               ],
             ),
             const SizedBox(height: 8),
-            // Header Row for the table
-            if (!_isEditMode)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                child: Row(
-                  children: [
-                    Expanded(flex: 3, child: Text('Component', style: Theme.of(context).textTheme.titleSmall)),
-                    Expanded(flex: 2, child: Text('Volume/Rxn (µl)', textAlign: TextAlign.center, style: Theme.of(context).textTheme.titleSmall)),
-                    Expanded(flex: 2, child: Text('Total (µl)', textAlign: TextAlign.end, style: Theme.of(context).textTheme.titleSmall)),
-                  ],
-                ),
-              ),
-            Expanded(
-              child: ListView.builder(
-                itemCount: _reagents.length,
-                itemBuilder: (context, index) {
-                  final reagent = _reagents[index];
-                  final double? totalNeededVolume = _calculatedTotalVolumes[reagent.name];
-                  
-                  if (totalNeededVolume == null) {
-                    return Container(); // Don't display reagents not in calculations
-                  }
 
-                  final int numReactions = int.tryParse(_numReactionsController.text) ?? 1;
-                  final double singleReactionVolume = numReactions > 0 ? totalNeededVolume / numReactions : 0.0;
-
-                  Widget componentNameWidget;
-                  Widget singleRxnVolumeWidget;
-
-                  if (_isEditMode && !reagent.isVariable) {
-                    componentNameWidget = TextField(
-                      controller: TextEditingController(text: reagent.name),
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
-                        contentPadding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0),
-                      ),
-                      onChanged: (value) {
-                        setState(() {
-                          _reagents[index] = reagent.copyWith(name: value);
-                          _calculateVolumes();
-                        });
-                      },
-                    );
-
-                    final double totalReactionVolume = double.tryParse(_customReactionVolumeController.text) ?? 25.0;
-                    singleRxnVolumeWidget = Expanded(
-                      flex: 2,
-                      child: TextField(
-                        controller: TextEditingController(text: (reagent.proportion * totalReactionVolume).toStringAsFixed(2)),
-                        decoration: const InputDecoration(
-                          border: OutlineInputBorder(),
-                          contentPadding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0),
-                        ),
-                        keyboardType: TextInputType.number,
-                        textAlign: TextAlign.center,
-                        onChanged: (value) {
-                          final double? newVolume = double.tryParse(value);
-                          if (newVolume != null && totalReactionVolume > 0) {
-                            setState(() {
-                              _reagents[index] = reagent.copyWith(proportion: newVolume / totalReactionVolume);
-                              _calculateVolumes();
-                            });
-                          }
-                        },
-                      ),
-                    );
-                  } else {
-                    componentNameWidget = Text(
-                      reagent.name,
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    );
-
-                    singleRxnVolumeWidget = Expanded(
-                      flex: 2,
-                      child: reagent.isVariable
-                          ? TextField(
-                              controller: _templateDnaVolumeController,
-                              decoration: const InputDecoration(
-                                hintText: 'Enter volume',
-                                border: OutlineInputBorder(),
-                                contentPadding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0),
-                              ),
-                              keyboardType: TextInputType.number,
-                              textAlign: TextAlign.center,
-                              onChanged: (value) => _calculateVolumes(),
-                            )
-                          : Text(
-                              formatVolume(singleReactionVolume),
-                              textAlign: TextAlign.center,
-                              style: Theme.of(context).textTheme.bodyMedium,
-                            ),
-                    );
-                  }
-
-                  return GestureDetector(
-                    onTap: () {
-                      if (_isEditMode && reagent.isOptional) {
-                        setState(() {
-                          _reagentInclusionStatus[reagent.name] = !(_reagentInclusionStatus[reagent.name] ?? false);
-                          _calculateVolumes();
-                        });
-                      }
-                    },
-                    child: Card(
-                      margin: const EdgeInsets.symmetric(vertical: 4.0),
-                      elevation: 1,
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Column(
-                          children: [
-                            Row(
-                              children: [
-                                Expanded(flex: 3, child: componentNameWidget),
-                                singleRxnVolumeWidget,
-                                Expanded(
-                                  flex: 2,
-                                  child: Text(
-                                    formatVolume(totalNeededVolume),
-                                    textAlign: TextAlign.end,
-                                    style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Colors.blueGrey[700]),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            if (_isEditMode && reagent.isOptional)
-                              Row(
-                                children: [
-                                  Checkbox(
-                                    value: _reagentInclusionStatus[reagent.name] ?? false,
-                                    onChanged: (bool? value) {
-                                      setState(() {
-                                        _reagentInclusionStatus[reagent.name] = value ?? false;
-                                        _calculateVolumes();
-                                      });
-                                    },
-                                  ),
-                                  const Text('Include in calculation'),
-                                ],
-                              ),
-                            if (_isEditMode && !reagent.isVariable && index < _reagents.length - 1)
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.delete, color: Colors.red),
-                                    onPressed: () {
-                                      setState(() {
-                                        _reagents.removeAt(index);
-                                        _calculateVolumes();
-                                      });
-                                    },
-                                  ),
-                                ],
-                              ),
-                          ],
-                        ),
+            // Reagents List
+            if (_calculatedTotalVolumes.isNotEmpty) ...[
+              for (var reagent in _reagents)
+                if (_calculatedTotalVolumes.containsKey(reagent.name))
+                  Container(
+                    margin: const EdgeInsets.symmetric(vertical: 4.0),
+                    decoration: BoxDecoration(
+                      color: CupertinoColors.systemBackground,
+                      borderRadius: BorderRadius.circular(12.0),
+                      border: Border.all(
+                        color: CupertinoColors.separator,
+                        width: 0.5,
                       ),
                     ),
-                  );
-                },
-              ),
-            ),
-            if (_isEditMode)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 16.0),
-                child: ElevatedButton(
-                  onPressed: () {
-                    setState(() {
-                      _reagents.insert(_reagents.length - 1, // Insert before water
-                        Reagent(
-                          name: 'New Reagent',
-                          proportion: 0.0,
+                    padding: const EdgeInsets.all(16.0),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          flex: 3,
+                          child: Text(
+                            reagent.name,
+                            style: CupertinoTheme.of(context).textTheme.textStyle,
+                          ),
                         ),
-                      );
-                    });
-                  },
-                  child: const Text('Add New Reagent'),
+                        Expanded(
+                          flex: 2,
+                          child: Text(
+                            formatVolume(_calculatedTotalVolumes[reagent.name]! / 
+                                (int.tryParse(_numReactionsController.text) ?? 1)),
+                            textAlign: TextAlign.center,
+                            style: CupertinoTheme.of(context).textTheme.textStyle,
+                          ),
+                        ),
+                        Expanded(
+                          flex: 2,
+                          child: Text(
+                            formatVolume(_calculatedTotalVolumes[reagent.name]!),
+                            textAlign: TextAlign.end,
+                            style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: CupertinoColors.systemBlue,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+            ] else
+              Container(
+                padding: const EdgeInsets.all(32.0),
+                child: const Center(
+                  child: Text(
+                    'Enter parameters above to calculate volumes',
+                    style: TextStyle(
+                      color: CupertinoColors.secondaryLabel,
+                    ),
+                  ),
                 ),
               ),
           ],

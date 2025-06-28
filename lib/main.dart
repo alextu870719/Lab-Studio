@@ -13,18 +13,52 @@ void main() {
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  bool _isDarkMode = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadThemePreference();
+  }
+
+  Future<void> _loadThemePreference() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _isDarkMode = prefs.getBool('isDarkMode') ?? false;
+    });
+  }
+
+  Future<void> _toggleTheme() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _isDarkMode = !_isDarkMode;
+    });
+    await prefs.setBool('isDarkMode', _isDarkMode);
+  }
 
   @override
   Widget build(BuildContext context) {
     return CupertinoApp(
       title: 'PCR Reagent Calculator',
-      theme: const CupertinoThemeData(
+      theme: CupertinoThemeData(
+        brightness: _isDarkMode ? Brightness.dark : Brightness.light,
         primaryColor: CupertinoColors.systemBlue,
-        scaffoldBackgroundColor: CupertinoColors.systemGroupedBackground,
+        scaffoldBackgroundColor: _isDarkMode 
+            ? CupertinoColors.systemBackground
+            : CupertinoColors.systemGroupedBackground,
       ),
-      home: const PcrCalculatorPage(),
+      home: PcrCalculatorPage(
+        onToggleTheme: _toggleTheme,
+        isDarkMode: _isDarkMode,
+      ),
     );
   }
 }
@@ -117,7 +151,14 @@ class PcrConfiguration {
 }
 
 class PcrCalculatorPage extends StatefulWidget {
-  const PcrCalculatorPage({super.key});
+  final VoidCallback onToggleTheme;
+  final bool isDarkMode;
+
+  const PcrCalculatorPage({
+    super.key,
+    required this.onToggleTheme,
+    required this.isDarkMode,
+  });
 
   @override
   State<PcrCalculatorPage> createState() => _PcrCalculatorPageState();
@@ -273,6 +314,18 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
               child: const Text('OK'),
             ),
           ],
+        );
+      },
+    );
+  }
+
+  void _showSettingsPage() {
+    showCupertinoModalPopup(
+      context: context,
+      builder: (BuildContext context) {
+        return SettingsPage(
+          isDarkMode: widget.isDarkMode,
+          onToggleTheme: widget.onToggleTheme,
         );
       },
     );
@@ -839,6 +892,16 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
         middle: const Text('PCR Calculator'),
+        trailing: CupertinoButton(
+          padding: EdgeInsets.zero,
+          onPressed: () {
+            _showSettingsPage();
+          },
+          child: const Icon(
+            CupertinoIcons.settings,
+            size: 24,
+          ),
+        ),
       ),
       child: GestureDetector(
         onTap: () {
@@ -1425,6 +1488,209 @@ class _ConfigurationSelectorState extends State<ConfigurationSelector> {
                       );
                     },
                   ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class SettingsPage extends StatelessWidget {
+  final bool isDarkMode;
+  final VoidCallback onToggleTheme;
+
+  const SettingsPage({
+    super.key,
+    required this.isDarkMode,
+    required this.onToggleTheme,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.6,
+      decoration: const BoxDecoration(
+        color: CupertinoColors.systemBackground,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Column(
+        children: [
+          // 頂部拖動條
+          Container(
+            width: 36,
+            height: 5,
+            margin: const EdgeInsets.symmetric(vertical: 12),
+            decoration: BoxDecoration(
+              color: CupertinoColors.quaternaryLabel,
+              borderRadius: BorderRadius.circular(2.5),
+            ),
+          ),
+          // 標題和關閉按鈕
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Settings',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                CupertinoButton(
+                  padding: EdgeInsets.zero,
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Done'),
+                ),
+              ],
+            ),
+          ),
+          // 設定項目
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              children: [
+                // 主題設定卡片
+                Container(
+                  decoration: BoxDecoration(
+                    color: CupertinoColors.tertiarySystemBackground,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    children: [
+                      // 主題切換項目
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        child: Row(
+                          children: [
+                            // 圖示
+                            Container(
+                              width: 32,
+                              height: 32,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    CupertinoColors.systemOrange,
+                                    CupertinoColors.systemYellow,
+                                  ],
+                                ),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Icon(
+                                isDarkMode 
+                                    ? CupertinoIcons.moon_fill 
+                                    : CupertinoIcons.sun_max_fill,
+                                color: CupertinoColors.white,
+                                size: 18,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            // 標題和描述
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Appearance',
+                                    style: const TextStyle(
+                                      fontSize: 17,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    isDarkMode ? 'Dark Mode' : 'Light Mode',
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      color: CupertinoColors.secondaryLabel,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            // 切換開關
+                            CupertinoSwitch(
+                              value: isDarkMode,
+                              onChanged: (value) {
+                                onToggleTheme();
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // 應用程式資訊卡片
+                Container(
+                  decoration: BoxDecoration(
+                    color: CupertinoColors.tertiarySystemBackground,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    children: [
+                      // 版本資訊
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        child: Row(
+                          children: [
+                            // 圖示
+                            Container(
+                              width: 32,
+                              height: 32,
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    CupertinoColors.systemBlue,
+                                    CupertinoColors.systemPurple,
+                                  ],
+                                ),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(
+                                CupertinoIcons.lab_flask_solid,
+                                color: CupertinoColors.white,
+                                size: 18,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            // 標題和描述
+                            const Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'PCR Reagent Calculator',
+                                    style: TextStyle(
+                                      fontSize: 17,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  SizedBox(height: 2),
+                                  Text(
+                                    'Version 1.0.0',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: CupertinoColors.secondaryLabel,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),

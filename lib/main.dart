@@ -144,14 +144,38 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
     Reagent(name: 'Nuclease-Free Water', proportion: 0.0),
   ];
 
+  // Controllers for edit mode to prevent focus loss
+  List<TextEditingController> _reagentNameControllers = [];
+  List<TextEditingController> _reagentVolumeControllers = [];
+
   @override
   void initState() {
     super.initState();
+    _initializeEditControllers();
     _calculateVolumes();
+  }
+
+  void _initializeEditControllers() {
+    _reagentNameControllers.clear();
+    _reagentVolumeControllers.clear();
+    
+    for (int i = 0; i < _reagents.length; i++) {
+      _reagentNameControllers.add(TextEditingController(text: _reagents[i].name));
+      _reagentVolumeControllers.add(
+        TextEditingController(text: (_reagents[i].proportion * 50.0).toString())
+      );
+    }
   }
 
   @override
   void dispose() {
+    // Dispose all controllers
+    for (var controller in _reagentNameControllers) {
+      controller.dispose();
+    }
+    for (var controller in _reagentVolumeControllers) {
+      controller.dispose();
+    }
     _numReactionsController.dispose();
     _customReactionVolumeController.dispose();
     _templateDnaVolumeController.dispose();
@@ -446,6 +470,22 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
   }
 
   Widget _buildEditableReagentRow(Reagent reagent, int index) {
+    // Ensure controllers exist for this index
+    while (_reagentNameControllers.length <= index) {
+      _reagentNameControllers.add(TextEditingController());
+      _reagentVolumeControllers.add(TextEditingController());
+    }
+    
+    // Update controller values only if they don't match current reagent
+    if (_reagentNameControllers[index].text != reagent.name) {
+      _reagentNameControllers[index].text = reagent.name;
+    }
+    
+    String volumeText = (reagent.proportion * 50.0).toString();
+    if (_reagentVolumeControllers[index].text != volumeText) {
+      _reagentVolumeControllers[index].text = volumeText;
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -455,7 +495,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
               flex: 3,
               child: CupertinoTextField(
                 placeholder: 'Reagent Name',
-                controller: TextEditingController(text: reagent.name),
+                controller: _reagentNameControllers[index],
                 onChanged: (value) {
                   setState(() {
                     _reagents[index] = reagent.copyWith(name: value);
@@ -475,7 +515,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                 flex: 2,
                 child: CupertinoTextField(
                   placeholder: 'Volume',
-                  controller: TextEditingController(text: (reagent.proportion * 50.0).toString()),
+                  controller: _reagentVolumeControllers[index],
                   keyboardType: TextInputType.number,
                   onChanged: (value) {
                     double? newVolume = double.tryParse(value);
@@ -525,6 +565,10 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
       );
       _reagents.add(newReagent);
       
+      // Add new controllers for the added reagent
+      _reagentNameControllers.add(TextEditingController(text: newReagentName));
+      _reagentVolumeControllers.add(TextEditingController(text: (1.0).toString()));
+      
       _calculateVolumes();
     });
   }
@@ -533,6 +577,8 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
     if (_reagents.length > 1) {
       setState(() {
         _reagents.removeAt(index);
+        _reagentNameControllers.removeAt(index);
+        _reagentVolumeControllers.removeAt(index);
         _calculateVolumes();
       });
     }

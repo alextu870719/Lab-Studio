@@ -306,11 +306,11 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
         return CupertinoAlertDialog(
           title: Text(
             'Input Error',
-            style: TextStyle(color: CupertinoColors.label),
+            style: TextStyle(color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
           ),
           content: Text(
             message,
-            style: TextStyle(color: CupertinoColors.label),
+            style: TextStyle(color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
           ),
           actions: <Widget>[
             CupertinoDialogAction(
@@ -347,11 +347,11 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
         return CupertinoAlertDialog(
           title: Text(
             'Success',
-            style: TextStyle(color: CupertinoColors.label),
+            style: TextStyle(color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
           ),
           content: Text(
             message,
-            style: TextStyle(color: CupertinoColors.label),
+            style: TextStyle(color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
           ),
           actions: <Widget>[
             CupertinoDialogAction(
@@ -399,7 +399,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
         return CupertinoAlertDialog(
           title: Text(
             'Save Configuration',
-            style: TextStyle(color: CupertinoColors.label),
+            style: TextStyle(color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -408,7 +408,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
               CupertinoTextField(
                 controller: nameController,
                 placeholder: 'Configuration Name',
-                style: TextStyle(color: CupertinoColors.label),
+                style: TextStyle(color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
                 placeholderStyle: TextStyle(color: CupertinoColors.placeholderText),
                 decoration: BoxDecoration(
                   color: CupertinoColors.tertiarySystemBackground,
@@ -858,11 +858,11 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
         return CupertinoAlertDialog(
           title: Text(
             'Delete Reagent',
-            style: TextStyle(color: CupertinoColors.label),
+            style: TextStyle(color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
           ),
           content: Text(
             'Are you sure you want to delete "$reagentName"?',
-            style: TextStyle(color: CupertinoColors.label),
+            style: TextStyle(color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
           ),
           actions: [
             CupertinoDialogAction(
@@ -1384,11 +1384,11 @@ class _ConfigurationSelectorState extends State<ConfigurationSelector> {
         return CupertinoAlertDialog(
           title: Text(
             'Delete Configuration',
-            style: TextStyle(color: CupertinoColors.label),
+            style: TextStyle(color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
           ),
           content: Text(
             'Are you sure you want to delete "${config.name}"? This action cannot be undone.',
-            style: TextStyle(color: CupertinoColors.label),
+            style: TextStyle(color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
           ),
           actions: [
             CupertinoDialogAction(
@@ -1490,7 +1490,7 @@ class _ConfigurationSelectorState extends State<ConfigurationSelector> {
                     child: Text(
                       'No configurations available',
                       style: TextStyle(
-                        color: CupertinoColors.secondaryLabel,
+                        color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.secondaryLabel,
                         fontSize: 16,
                       ),
                     ),
@@ -1558,15 +1558,15 @@ class _ConfigurationSelectorState extends State<ConfigurationSelector> {
                                         style: TextStyle(
                                           fontSize: 17,
                                           fontWeight: FontWeight.w600,
-                                          color: CupertinoColors.label,
+                                          color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
                                         ),
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
                                         '${config.numReactions} reactions • ${config.reactionVolume.toStringAsFixed(1)} µl',
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontSize: 14,
-                                          color: CupertinoColors.secondaryLabel,
+                                          color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.secondaryLabel,
                                         ),
                                       ),
                                     ],

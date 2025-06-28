@@ -776,7 +776,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                       Expanded(
                         flex: 2,
                         child: Text(
-                          '25 µl rxn',
+                          '50 µl rxn',
                           textAlign: TextAlign.center,
                           style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
                             fontWeight: FontWeight.w600,

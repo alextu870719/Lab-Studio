@@ -1,0 +1,89 @@
+# Flutter Windows Cross-Compilation Container
+# This uses MinGW-w64 for cross-compilation on Linux
+
+FROM ubuntu:22.04
+
+# Set environment variables
+ENV DEBIAN_FRONTEND=noninteractive
+ENV FLUTTER_VERSION=3.32.4
+ENV FLUTTER_HOME=/opt/flutter
+ENV PATH="$FLUTTER_HOME/bin:$PATH"
+
+# Install dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    git \
+    unzip \
+    zip \
+    xz-utils \
+    wget \
+    ca-certificates \
+    mingw-w64 \
+    g++-mingw-w64 \
+    gcc-mingw-w64 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Flutter SDK
+RUN wget -q https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_${FLUTTER_VERSION}-stable.tar.xz && \
+    tar xf flutter_linux_${FLUTTER_VERSION}-stable.tar.xz -C /opt && \
+    rm flutter_linux_${FLUTTER_VERSION}-stable.tar.xz
+
+# Configure Flutter
+RUN flutter config --enable-windows-desktop && \
+    flutter precache --windows
+
+# Create working directory
+WORKDIR /workspace
+
+# Build script
+COPY <<EOF /usr/local/bin/build-flutter-windows.sh
+#!/bin/bash
+set -e
+
+echo "=== Flutter Windows Cross-Compilation Build ==="
+echo "Project: \$(basename \$(pwd))"
+echo "Flutter Version: \$(flutter --version | head -1)"
+echo ""
+
+# Get version from pubspec.yaml
+VERSION=\$(grep "version:" pubspec.yaml | sed 's/version: //g' | sed 's/+.*//g')
+echo "Building version: \$VERSION"
+
+# Clean and prepare
+echo "Cleaning previous builds..."
+flutter clean
+flutter pub get
+
+# Attempt to build for Windows
+echo "Building Windows app..."
+if flutter build windows --release; then
+    echo "✓ Windows build successful"
+    
+    # Create release directory
+    mkdir -p releases
+    
+    # Package the Windows app
+    cd build/windows/x64/runner/Release/
+    zip -r "../../../../../releases/Lab-Studio-\$VERSION-windows.zip" ./*
+    cd - > /dev/null
+    
+    echo "✓ Windows app packaged: releases/Lab-Studio-\$VERSION-windows.zip"
+    
+    # List the release files
+    ls -la releases/Lab-Studio-\$VERSION-windows.zip
+    
+else
+    echo "✗ Windows build failed"
+    echo "This might be due to platform-specific dependencies."
+    echo "Consider using GitHub Actions or a Windows VM for better compatibility."
+    exit 1
+fi
+
+echo ""
+echo "=== Build Complete ==="
+EOF
+
+RUN chmod +x /usr/local/bin/build-flutter-windows.sh
+
+# Default command
+CMD ["/usr/local/bin/build-flutter-windows.sh"]

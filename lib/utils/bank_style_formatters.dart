@@ -102,8 +102,9 @@ class BankStyleDecimalFormatter extends TextInputFormatter {
 /// 銀行式整數輸入格式化器
 class BankStyleIntegerFormatter extends TextInputFormatter {
   final int maxDigits;
+  final bool allowEmpty;
   
-  BankStyleIntegerFormatter({this.maxDigits = 4});
+  BankStyleIntegerFormatter({this.maxDigits = 4, this.allowEmpty = true});
   
   @override
   TextEditingValue formatEditUpdate(
@@ -126,16 +127,32 @@ class BankStyleIntegerFormatter extends TextInputFormatter {
       String currentDigits = oldText.replaceAll(RegExp(r'[^\d]'), '');
       if (currentDigits.length > 1) {
         currentDigits = currentDigits.substring(0, currentDigits.length - 1);
+        int value = int.tryParse(currentDigits) ?? 0;
+        return TextEditingValue(
+          text: value.toString(),
+          selection: TextSelection.collapsed(offset: value.toString().length),
+        );
       } else {
-        currentDigits = '1';
+        // 如果只剩一個數字，允許刪除到空字串或0
+        if (allowEmpty) {
+          return const TextEditingValue(
+            text: '',
+            selection: TextSelection.collapsed(offset: 0),
+          );
+        } else {
+          return const TextEditingValue(
+            text: '0',
+            selection: TextSelection.collapsed(offset: 1),
+          );
+        }
       }
-      
-      int value = int.tryParse(currentDigits) ?? 1;
-      if (value == 0) value = 1;
-      
-      return TextEditingValue(
-        text: value.toString(),
-        selection: TextSelection.collapsed(offset: value.toString().length),
+    }
+    
+    // 處理完全清空的情況
+    if (newText.isEmpty) {
+      return const TextEditingValue(
+        text: '',
+        selection: TextSelection.collapsed(offset: 0),
       );
     }
     
@@ -157,6 +174,14 @@ class BankStyleIntegerFormatter extends TextInputFormatter {
     // 獲取當前的數字字符串
     String currentDigits = oldText.replaceAll(RegExp(r'[^\d]'), '');
     
+    // 如果當前是空字串，直接使用新字符
+    if (currentDigits.isEmpty) {
+      return TextEditingValue(
+        text: newChar,
+        selection: TextSelection.collapsed(offset: newChar.length),
+      );
+    }
+    
     // 檢查是否超過最大位數
     if (currentDigits.length >= maxDigits) {
       return oldValue;
@@ -165,8 +190,7 @@ class BankStyleIntegerFormatter extends TextInputFormatter {
     // 新數字從右邊加入
     currentDigits = currentDigits + newChar;
     
-    int value = int.tryParse(currentDigits) ?? 1;
-    if (value == 0) value = 1;
+    int value = int.tryParse(currentDigits) ?? 0;
     
     return TextEditingValue(
       text: value.toString(),

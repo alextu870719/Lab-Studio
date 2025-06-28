@@ -151,6 +151,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
   
   final Map<String, bool> _reagentInclusionStatus = {}; // New map to manage inclusion status
   bool _isEditMode = false;
+  String _currentConfigurationName = 'Default Configuration';
 
   final List<Reagent> _reagents = [
     Reagent(name: '5X Q5 Reaction Buffer', proportion: 5.0 / 25.0),
@@ -327,7 +328,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
   }
 
   Future<void> _saveConfiguration() async {
-    final TextEditingController nameController = TextEditingController();
+    final TextEditingController nameController = TextEditingController(text: _currentConfigurationName);
     
     await showDialog(
       context: context,
@@ -387,6 +388,11 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
       
       // Save back to preferences
       await prefs.setStringList('saved_configurations', existingConfigs);
+      
+      // Update current configuration name
+      setState(() {
+        _currentConfigurationName = name;
+      });
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -495,11 +501,51 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
       _reagentInclusionStatus.clear();
       _reagentInclusionStatus.addAll(config.reagentInclusionStatus);
       
+      // Update current configuration name
+      _currentConfigurationName = config.name;
+      
       _calculateVolumes();
     });
     
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Configuration "${config.name}" loaded')),
+    );
+  }
+
+  Future<void> _editConfigurationName() async {
+    final TextEditingController nameController = TextEditingController(text: _currentConfigurationName);
+    
+    await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Edit Configuration Name'),
+          content: TextField(
+            controller: nameController,
+            decoration: const InputDecoration(
+              labelText: 'Configuration Name',
+              hintText: 'Enter a name for this configuration',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                if (nameController.text.trim().isNotEmpty) {
+                  setState(() {
+                    _currentConfigurationName = nameController.text.trim();
+                  });
+                }
+                Navigator.of(context).pop();
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -607,9 +653,28 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Reagent Components',
-                  style: Theme.of(context).textTheme.headlineSmall,
+                Expanded(
+                  child: GestureDetector(
+                    onTap: _isEditMode ? _editConfigurationName : null,
+                    child: Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            _currentConfigurationName,
+                            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                              color: _isEditMode ? Colors.blue : null,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (_isEditMode)
+                          const Padding(
+                            padding: EdgeInsets.only(left: 4.0),
+                            child: Icon(Icons.edit, size: 18, color: Colors.blue),
+                          ),
+                      ],
+                    ),
+                  ),
                 ),
                 ElevatedButton(
                   onPressed: () {

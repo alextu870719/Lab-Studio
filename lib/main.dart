@@ -415,6 +415,161 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
     await Printing.sharePdf(bytes: await doc.save(), filename: 'pcr_reagent_calculation.pdf');
   }
 
+  Widget _buildDisplayReagentRow(Reagent reagent) {
+    return Row(
+      children: [
+        Expanded(
+          flex: 3,
+          child: Text(
+            reagent.name,
+            style: CupertinoTheme.of(context).textTheme.textStyle,
+          ),
+        ),
+        Expanded(
+          flex: 2,
+          child: Text(
+            formatVolume(_calculatedTotalVolumes[reagent.name]! / 
+                (int.tryParse(_numReactionsController.text) ?? 1)),
+            textAlign: TextAlign.center,
+            style: CupertinoTheme.of(context).textTheme.textStyle,
+          ),
+        ),
+        Expanded(
+          flex: 2,
+          child: Text(
+            formatVolume(_calculatedTotalVolumes[reagent.name]!),
+            textAlign: TextAlign.end,
+            style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
+              fontWeight: FontWeight.w600,
+              color: CupertinoColors.systemBlue,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEditableReagentRow(Reagent reagent, int index) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              flex: 3,
+              child: CupertinoTextField(
+                placeholder: 'Reagent Name',
+                controller: TextEditingController(text: reagent.name),
+                onChanged: (value) {
+                  setState(() {
+                    _reagents[index] = reagent.copyWith(name: value);
+                    _calculateVolumes();
+                  });
+                },
+                decoration: BoxDecoration(
+                  color: CupertinoColors.tertiarySystemBackground,
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
+              ),
+            ),
+            const SizedBox(width: 8),
+            if (!reagent.isVariable) ...[
+              Expanded(
+                flex: 2,
+                child: CupertinoTextField(
+                  placeholder: 'Volume',
+                  controller: TextEditingController(text: (reagent.proportion * 25.0).toString()),
+                  keyboardType: TextInputType.number,
+                  onChanged: (value) {
+                    double? newVolume = double.tryParse(value);
+                    if (newVolume != null) {
+                      setState(() {
+                        _reagents[index] = reagent.copyWith(proportion: newVolume / 25.0);
+                        _calculateVolumes();
+                      });
+                    }
+                  },
+                  decoration: BoxDecoration(
+                    color: CupertinoColors.tertiarySystemBackground,
+                    borderRadius: BorderRadius.circular(8.0),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
+                ),
+              ),
+            ] else ...[
+              Expanded(
+                flex: 2,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 12.0),
+                  decoration: BoxDecoration(
+                    color: CupertinoColors.secondarySystemBackground,
+                    borderRadius: BorderRadius.circular(8.0),
+                  ),
+                  child: Text(
+                    'Variable',
+                    style: TextStyle(color: CupertinoColors.secondaryLabel),
+                  ),
+                ),
+              ),
+            ],
+            const SizedBox(width: 8),
+            CupertinoButton(
+              padding: EdgeInsets.zero,
+              onPressed: () => _deleteReagent(index),
+              child: const Icon(
+                CupertinoIcons.delete,
+                color: CupertinoColors.destructiveRed,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            if (reagent.isOptional) ...[
+              CupertinoSwitch(
+                value: _reagentInclusionStatus[reagent.name] ?? false,
+                onChanged: (value) {
+                  setState(() {
+                    _reagentInclusionStatus[reagent.name] = value;
+                    _calculateVolumes();
+                  });
+                },
+              ),
+              const SizedBox(width: 8),
+              const Text('Include in calculation'),
+            ] else ...[
+              const Text('Required reagent'),
+            ],
+          ],
+        ),
+      ],
+    );
+  }
+
+  void _addNewReagent() {
+    setState(() {
+      _reagents.add(Reagent(
+        name: 'New Reagent',
+        proportion: 1.0 / 25.0,
+        isOptional: true,
+      ));
+      _calculateVolumes();
+    });
+  }
+
+  void _deleteReagent(int index) {
+    if (_reagents.length > 1) {
+      setState(() {
+        String reagentName = _reagents[index].name;
+        _reagents.removeAt(index);
+        _reagentInclusionStatus.remove(reagentName);
+        _calculateVolumes();
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
@@ -559,8 +714,8 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
 
             // Reagents List
             if (_calculatedTotalVolumes.isNotEmpty) ...[
-              for (var reagent in _reagents)
-                if (_calculatedTotalVolumes.containsKey(reagent.name))
+              for (var i = 0; i < _reagents.length; i++)
+                if (_calculatedTotalVolumes.containsKey(_reagents[i].name))
                   Container(
                     margin: const EdgeInsets.symmetric(vertical: 4.0),
                     decoration: BoxDecoration(
@@ -572,38 +727,27 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                       ),
                     ),
                     padding: const EdgeInsets.all(16.0),
+                    child: _isEditMode 
+                        ? _buildEditableReagentRow(_reagents[i], i)
+                        : _buildDisplayReagentRow(_reagents[i]),
+                  ),
+              
+              // Add new reagent button in edit mode
+              if (_isEditMode)
+                Container(
+                  margin: const EdgeInsets.symmetric(vertical: 4.0),
+                  child: CupertinoButton(
+                    onPressed: _addNewReagent,
                     child: Row(
-                      children: [
-                        Expanded(
-                          flex: 3,
-                          child: Text(
-                            reagent.name,
-                            style: CupertinoTheme.of(context).textTheme.textStyle,
-                          ),
-                        ),
-                        Expanded(
-                          flex: 2,
-                          child: Text(
-                            formatVolume(_calculatedTotalVolumes[reagent.name]! / 
-                                (int.tryParse(_numReactionsController.text) ?? 1)),
-                            textAlign: TextAlign.center,
-                            style: CupertinoTheme.of(context).textTheme.textStyle,
-                          ),
-                        ),
-                        Expanded(
-                          flex: 2,
-                          child: Text(
-                            formatVolume(_calculatedTotalVolumes[reagent.name]!),
-                            textAlign: TextAlign.end,
-                            style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: CupertinoColors.systemBlue,
-                            ),
-                          ),
-                        ),
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: const [
+                        Icon(CupertinoIcons.add),
+                        SizedBox(width: 8),
+                        Text('Add New Reagent'),
                       ],
                     ),
                   ),
+                ),
             ] else
               Container(
                 padding: const EdgeInsets.all(32.0),

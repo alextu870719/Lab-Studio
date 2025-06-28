@@ -105,7 +105,7 @@ class PcrConfiguration {
     return PcrConfiguration(
       name: json['name'] ?? '',
       numReactions: json['numReactions'] ?? 1,
-      reactionVolume: (json['reactionVolume'] ?? 25.0).toDouble(),
+      reactionVolume: (json['reactionVolume'] ?? 50.0).toDouble(),
       templateDnaVolume: (json['templateDnaVolume'] ?? 0.0).toDouble(),
       reagents: (json['reagents'] as List? ?? [])
           .map((r) => Reagent.fromJson(r as Map<String, dynamic>))
@@ -124,7 +124,7 @@ class PcrCalculatorPage extends StatefulWidget {
 
 class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
   final TextEditingController _numReactionsController = TextEditingController(text: '1');
-  final TextEditingController _customReactionVolumeController = TextEditingController(text: '25.0');
+  final TextEditingController _customReactionVolumeController = TextEditingController(text: '50.0');
   final TextEditingController _templateDnaVolumeController = TextEditingController();
 
   Map<String, double> _calculatedTotalVolumes = {};
@@ -134,13 +134,13 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
   String _currentConfigurationName = 'Default Configuration';
 
   final List<Reagent> _reagents = [
-    Reagent(name: '5X Q5 Reaction Buffer', proportion: 5.0 / 25.0),
-    Reagent(name: '10 mM dNTPs', proportion: 2.0 / 25.0),
-    Reagent(name: '10 µM Forward Primer', proportion: 2.5 / 25.0),
-    Reagent(name: '10 µM Reverse Primer', proportion: 2.5 / 25.0),
+    Reagent(name: '5X Q5 Reaction Buffer', proportion: 10.0 / 50.0),
+    Reagent(name: '10 mM dNTPs', proportion: 4.0 / 50.0),
+    Reagent(name: '10 µM Forward Primer', proportion: 5.0 / 50.0),
+    Reagent(name: '10 µM Reverse Primer', proportion: 5.0 / 50.0),
     Reagent(name: 'Template DNA', proportion: 0.0, isVariable: true),
-    Reagent(name: 'Q5 High-Fidelity DNA Polymerase', proportion: 0.5 / 25.0),
-    Reagent(name: '5X Q5 High GC Enhancer (optional)', proportion: 5.0 / 25.0, isOptional: true),
+    Reagent(name: 'Q5 High-Fidelity DNA Polymerase', proportion: 1.0 / 50.0),
+    Reagent(name: '5X Q5 High GC Enhancer (optional)', proportion: 10.0 / 50.0, isOptional: true),
     Reagent(name: 'Nuclease-Free Water', proportion: 0.0),
   ];
 
@@ -166,8 +166,8 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
       int numReactions = int.tryParse(_numReactionsController.text) ?? 1;
       if (numReactions <= 0) numReactions = 1;
 
-      double totalVolumePerReaction = double.tryParse(_customReactionVolumeController.text) ?? 25.0;
-      if (totalVolumePerReaction <= 0) totalVolumePerReaction = 25.0;
+      double totalVolumePerReaction = double.tryParse(_customReactionVolumeController.text) ?? 50.0;
+      if (totalVolumePerReaction <= 0) totalVolumePerReaction = 50.0;
 
       double totalCalculatedVolumeExcludingWater = 0.0;
 
@@ -224,7 +224,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
 
   void _clearAllInputs() {
     _numReactionsController.text = '1';
-    _customReactionVolumeController.text = '25.0';
+    _customReactionVolumeController.text = '50.0';
     _templateDnaVolumeController.clear();
     setState(() {
       _calculatedTotalVolumes.clear();
@@ -281,7 +281,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
       final config = PcrConfiguration(
         name: name,
         numReactions: int.tryParse(_numReactionsController.text) ?? 1,
-        reactionVolume: double.tryParse(_customReactionVolumeController.text) ?? 25.0,
+        reactionVolume: double.tryParse(_customReactionVolumeController.text) ?? 50.0,
         templateDnaVolume: double.tryParse(_templateDnaVolumeController.text) ?? 0.0,
         reagents: _reagents,
         reagentInclusionStatus: _reagentInclusionStatus,
@@ -475,13 +475,13 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                 flex: 2,
                 child: CupertinoTextField(
                   placeholder: 'Volume',
-                  controller: TextEditingController(text: (reagent.proportion * 25.0).toString()),
+                  controller: TextEditingController(text: (reagent.proportion * 50.0).toString()),
                   keyboardType: TextInputType.number,
                   onChanged: (value) {
                     double? newVolume = double.tryParse(value);
                     if (newVolume != null) {
                       setState(() {
-                        _reagents[index] = reagent.copyWith(proportion: newVolume / 25.0);
+                        _reagents[index] = reagent.copyWith(proportion: newVolume / 50.0);
                         _calculateVolumes();
                       });
                     }
@@ -520,7 +520,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
       String newReagentName = 'New Reagent ${_reagents.length + 1}';
       Reagent newReagent = Reagent(
         name: newReagentName,
-        proportion: 1.0 / 25.0,
+        proportion: 1.0 / 50.0,
         isOptional: false, // Make all new reagents required for simplicity
       );
       _reagents.add(newReagent);

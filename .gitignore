@@ -43,3 +43,11 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Release artifacts (large binary files)
+releases/*.apk
+releases/*.ipa
+releases/*.dmg
+releases/*.zip
+releases/*.tar.gz
+releases/*.exe

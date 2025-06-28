@@ -1,0 +1,60 @@
+# Windows 構建 Dockerfile (使用 Wine)
+FROM ubuntu:22.04
+
+# 設置非互動模式
+ENV DEBIAN_FRONTEND=noninteractive
+
+# 安裝系統依賴
+RUN apt-get update && apt-get install -y \
+    curl \
+    git \
+    wget \
+    unzip \
+    xz-utils \
+    zip \
+    wine \
+    winetricks \
+    xvfb \
+    && rm -rf /var/lib/apt/lists/*
+
+# 設置 Wine
+ENV WINEPREFIX=/root/.wine
+ENV WINEARCH=win64
+
+# 初始化 Wine
+RUN xvfb-run -a winecfg
+
+# 創建工作目錄
+WORKDIR /app
+
+# 安裝 Flutter
+ENV FLUTTER_VERSION=3.32.4
+RUN git clone https://github.com/flutter/flutter.git -b ${FLUTTER_VERSION} /flutter
+ENV PATH="/flutter/bin:${PATH}"
+
+# 啟用 Windows 桌面支援
+RUN flutter config --enable-windows-desktop
+
+# 預下載依賴
+RUN flutter doctor
+
+# 複製專案檔案
+COPY . .
+
+# 安裝專案依賴
+RUN flutter pub get
+
+# 嘗試構建 Windows 應用程式
+# 注意：這可能需要額外的 Windows SDK 設置
+RUN flutter build windows --release || echo "Windows build may require additional setup"
+
+# 創建輸出目錄
+RUN mkdir -p /output
+
+# 如果構建成功，創建 zip 壓縮包
+RUN if [ -d "build/windows/x64/runner/Release" ]; then \
+        cd build/windows/x64/runner/Release && \
+        zip -r /output/Lab-Studio-1.0.0-windows.zip *; \
+    else \
+        echo "Windows build not successful" > /output/windows_build_failed.txt; \
+    fi

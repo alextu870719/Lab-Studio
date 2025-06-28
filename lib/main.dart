@@ -265,7 +265,8 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
     // Reset edit controllers to match reagent values
     for (int i = 0; i < _reagents.length && i < _reagentNameControllers.length; i++) {
       _reagentNameControllers[i].text = _reagents[i].name;
-      _reagentVolumeControllers[i].text = (_reagents[i].proportion * 50.0).toString();
+      double volume = _reagents[i].proportion * 50.0;
+      _reagentVolumeControllers[i].text = volume.toStringAsFixed(1);
     }
     
     setState(() {
@@ -332,12 +333,39 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
       );
       
       List<String> existingConfigs = prefs.getStringList('saved_configurations') ?? [];
-      existingConfigs.add(jsonEncode(config.toJson()));
+      
+      // 檢查是否已經存在同名配置，如果存在則替換
+      String newConfigJson = jsonEncode(config.toJson());
+      int existingIndex = -1;
+      
+      for (int i = 0; i < existingConfigs.length; i++) {
+        try {
+          Map<String, dynamic> existingJson = jsonDecode(existingConfigs[i]);
+          if (existingJson['name'] == name) {
+            existingIndex = i;
+            break;
+          }
+        } catch (e) {
+          // 如果解析現有配置失敗，標記為需要移除
+          print('Found invalid existing configuration at index $i: $e');
+        }
+      }
+      
+      if (existingIndex >= 0) {
+        // 替換現有配置
+        existingConfigs[existingIndex] = newConfigJson;
+      } else {
+        // 新增配置
+        existingConfigs.add(newConfigJson);
+      }
+      
       await prefs.setStringList('saved_configurations', existingConfigs);
       
       setState(() {
         _currentConfigurationName = name;
       });
+      
+      _showErrorDialog('Configuration "$name" saved successfully!');
     } catch (e) {
       _showErrorDialog('Failed to save configuration: $e');
     }
@@ -352,11 +380,39 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
         _showErrorDialog('No saved configurations found.');
         return;
       }
+
+      List<PcrConfiguration> configs = [];
+      List<String> validConfigStrings = [];
       
-      List<PcrConfiguration> configs = configStrings
-          .map((configString) => PcrConfiguration.fromJson(jsonDecode(configString)))
-          .toList();
+      // 逐一解析配置，過濾掉損壞的配置
+      for (int i = 0; i < configStrings.length; i++) {
+        try {
+          String configString = configStrings[i].trim();
+          if (configString.isEmpty) continue;
+          
+          // 嘗試解析 JSON
+          Map<String, dynamic> jsonData = jsonDecode(configString);
+          PcrConfiguration config = PcrConfiguration.fromJson(jsonData);
+          configs.add(config);
+          validConfigStrings.add(configString);
+        } catch (e) {
+          print('Skipping invalid configuration at index $i: $e');
+          print('Invalid config string: "${configStrings[i]}"');
+          // 跳過損壞的配置，繼續處理其他配置
+        }
+      }
       
+      // 如果有有效的配置被清理掉，更新儲存的列表
+      if (validConfigStrings.length != configStrings.length) {
+        await prefs.setStringList('saved_configurations', validConfigStrings);
+        print('Cleaned ${configStrings.length - validConfigStrings.length} invalid configurations');
+      }
+      
+      if (configs.isEmpty) {
+        _showErrorDialog('No valid configurations found. Invalid configurations have been cleaned.');
+        return;
+      }
+
       await showCupertinoModalPopup(
         context: context,
         builder: (BuildContext context) {
@@ -384,21 +440,29 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
   }
 
   void _applyConfiguration(PcrConfiguration config) {
-    setState(() {
-      _numReactionsController.text = config.numReactions.toString();
-      _customReactionVolumeController.text = config.reactionVolume.toString();
-      _templateDnaVolumeController.text = config.templateDnaVolume.toString();
-      
-      _reagents.clear();
-      _reagents.addAll(config.reagents);
-      
-      _reagentInclusionStatus.clear();
-      _reagentInclusionStatus.addAll(config.reagentInclusionStatus);
-      
-      _currentConfigurationName = config.name;
-      
-      _calculateVolumes();
-    });
+    try {
+      setState(() {
+        // 使用正確的格式化來設定控制器文字，符合銀行式格式化器的期望
+        _numReactionsController.text = config.numReactions.toString();
+        _customReactionVolumeController.text = config.reactionVolume.toStringAsFixed(1);
+        _templateDnaVolumeController.text = config.templateDnaVolume.toStringAsFixed(1);
+        
+        _reagents.clear();
+        _reagents.addAll(config.reagents);
+        
+        // 重新初始化控制器以確保與新的試劑列表同步
+        _initializeEditControllers();
+        
+        _reagentInclusionStatus.clear();
+        _reagentInclusionStatus.addAll(config.reagentInclusionStatus);
+        
+        _currentConfigurationName = config.name;
+        
+        _calculateVolumes();
+      });
+    } catch (e) {
+      _showErrorDialog('Failed to apply configuration: $e');
+    }
   }
 
   void _copyResults() {
@@ -629,6 +693,34 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
         );
       },
     );
+  }
+
+  // 清理損壞的配置 - 如果需要的話可以手動調用
+  Future<void> _cleanInvalidConfigurations() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      List<String> configStrings = prefs.getStringList('saved_configurations') ?? [];
+      List<String> validConfigs = [];
+      int removedCount = 0;
+      
+      for (String configString in configStrings) {
+        try {
+          jsonDecode(configString.trim());
+          validConfigs.add(configString);
+        } catch (e) {
+          removedCount++;
+        }
+      }
+      
+      if (removedCount > 0) {
+        await prefs.setStringList('saved_configurations', validConfigs);
+        _showErrorDialog('Cleaned $removedCount invalid configurations.');
+      } else {
+        _showErrorDialog('No invalid configurations found.');
+      }
+    } catch (e) {
+      _showErrorDialog('Failed to clean configurations: $e');
+    }
   }
 
   @override

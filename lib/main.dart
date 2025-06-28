@@ -164,27 +164,8 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
     _reagentVolumeControllers.clear();
     
     for (int i = 0; i < _reagents.length; i++) {
-      final nameController = TextEditingController(text: _reagents[i].name);
-      final volumeController = TextEditingController(text: (_reagents[i].proportion * 50.0).toString());
-      
-      // Add listeners instead of using onChanged
-      nameController.addListener(() {
-        if (nameController.text != _reagents[i].name) {
-          _reagents[i] = _reagents[i].copyWith(name: nameController.text);
-          _debounceCalculateVolumes();
-        }
-      });
-      
-      volumeController.addListener(() {
-        double? newVolume = double.tryParse(volumeController.text);
-        if (newVolume != null && newVolume / 50.0 != _reagents[i].proportion) {
-          _reagents[i] = _reagents[i].copyWith(proportion: newVolume / 50.0);
-          _debounceCalculateVolumes();
-        }
-      });
-      
-      _reagentNameControllers.add(nameController);
-      _reagentVolumeControllers.add(volumeController);
+      _reagentNameControllers.add(TextEditingController(text: _reagents[i].name));
+      _reagentVolumeControllers.add(TextEditingController(text: (_reagents[i].proportion * 50.0).toString()));
     }
   }
 
@@ -494,29 +475,8 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
   Widget _buildEditableReagentRow(Reagent reagent, int index) {
     // Ensure controllers exist for this index
     while (_reagentNameControllers.length <= index) {
-      final nameController = TextEditingController(text: _reagents[_reagentNameControllers.length].name);
-      final volumeController = TextEditingController(text: (_reagents[_reagentVolumeControllers.length].proportion * 50.0).toString());
-      
-      final currentIndex = _reagentNameControllers.length;
-      
-      // Add listeners instead of using onChanged
-      nameController.addListener(() {
-        if (nameController.text != _reagents[currentIndex].name) {
-          _reagents[currentIndex] = _reagents[currentIndex].copyWith(name: nameController.text);
-          _debounceCalculateVolumes();
-        }
-      });
-      
-      volumeController.addListener(() {
-        double? newVolume = double.tryParse(volumeController.text);
-        if (newVolume != null && newVolume / 50.0 != _reagents[currentIndex].proportion) {
-          _reagents[currentIndex] = _reagents[currentIndex].copyWith(proportion: newVolume / 50.0);
-          _debounceCalculateVolumes();
-        }
-      });
-      
-      _reagentNameControllers.add(nameController);
-      _reagentVolumeControllers.add(volumeController);
+      _reagentNameControllers.add(TextEditingController(text: _reagents[_reagentNameControllers.length].name));
+      _reagentVolumeControllers.add(TextEditingController(text: (_reagents[_reagentVolumeControllers.length].proportion * 50.0).toString()));
     }
 
     return Column(
@@ -527,8 +487,15 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
             Expanded(
               flex: 3,
               child: CupertinoTextField(
+                key: ValueKey('name_$index'),
                 placeholder: 'Reagent Name',
                 controller: _reagentNameControllers[index],
+                onSubmitted: (value) {
+                  setState(() {
+                    _reagents[index] = reagent.copyWith(name: value);
+                    _calculateVolumes();
+                  });
+                },
                 decoration: BoxDecoration(
                   color: CupertinoColors.tertiarySystemBackground,
                   borderRadius: BorderRadius.circular(8.0),
@@ -541,9 +508,19 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
               Expanded(
                 flex: 2,
                 child: CupertinoTextField(
+                  key: ValueKey('volume_$index'),
                   placeholder: 'Volume',
                   controller: _reagentVolumeControllers[index],
                   keyboardType: TextInputType.number,
+                  onSubmitted: (value) {
+                    double? newVolume = double.tryParse(value);
+                    if (newVolume != null) {
+                      setState(() {
+                        _reagents[index] = reagent.copyWith(proportion: newVolume / 50.0);
+                        _calculateVolumes();
+                      });
+                    }
+                  },
                   decoration: BoxDecoration(
                     color: CupertinoColors.tertiarySystemBackground,
                     borderRadius: BorderRadius.circular(8.0),
@@ -623,17 +600,6 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
         );
       },
     );
-  }
-
-  void _debounceCalculateVolumes() {
-    _debounceTimer?.cancel();
-    _debounceTimer = Timer(Duration(milliseconds: 300), () {
-      if (mounted) {
-        setState(() {
-          _calculateVolumes();
-        });
-      }
-    });
   }
 
   @override

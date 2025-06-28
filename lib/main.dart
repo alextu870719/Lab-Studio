@@ -779,6 +779,39 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                   ),
                 ),
               
+              // Header row for edit mode
+              if (_isEditMode)
+                Container(
+                  margin: const EdgeInsets.symmetric(vertical: 4.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        flex: 3,
+                        child: Text(
+                          'Components',
+                          style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: CupertinoColors.secondaryLabel,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        flex: 2,
+                        child: Text(
+                          '25 µl rxn',
+                          textAlign: TextAlign.center,
+                          style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: CupertinoColors.secondaryLabel,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              
               for (var i = 0; i < _reagents.length; i++)
                 if (_calculatedTotalVolumes.containsKey(_reagents[i].name))
                   _isEditMode 

@@ -52,7 +52,7 @@ class _MyAppState extends State<MyApp> {
         brightness: _isDarkMode ? Brightness.dark : Brightness.light,
         primaryColor: CupertinoColors.systemBlue,
         scaffoldBackgroundColor: _isDarkMode 
-            ? CupertinoColors.systemBackground
+            ? CupertinoColors.black
             : CupertinoColors.systemGroupedBackground,
       ),
       home: PcrCalculatorPage(
@@ -516,6 +516,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
             onDeleteConfiguration: _deleteConfiguration,
             onShowError: _showErrorDialog,
             onShowSuccess: _showSuccessDialog,
+            isDarkMode: widget.isDarkMode,
           );
         },
       );
@@ -915,7 +916,9 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
             // Parameters Section
             Container(
               decoration: BoxDecoration(
-                color: CupertinoColors.systemBackground,
+                color: widget.isDarkMode 
+                    ? CupertinoColors.systemGrey6.darkColor
+                    : CupertinoColors.systemBackground,
                 borderRadius: BorderRadius.circular(12.0),
               ),
               padding: const EdgeInsets.all(16.0),
@@ -1205,7 +1208,9 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                         child: Container(
                           margin: const EdgeInsets.symmetric(vertical: 4.0),
                           decoration: BoxDecoration(
-                            color: CupertinoColors.systemBackground,
+                            color: widget.isDarkMode 
+                                ? CupertinoColors.systemGrey6.darkColor
+                                : CupertinoColors.systemBackground,
                             borderRadius: BorderRadius.circular(12.0),
                             border: Border.all(
                               color: CupertinoColors.separator,
@@ -1219,7 +1224,9 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                     : Container(
                         margin: const EdgeInsets.symmetric(vertical: 4.0),
                         decoration: BoxDecoration(
-                          color: CupertinoColors.systemBackground,
+                          color: widget.isDarkMode 
+                              ? CupertinoColors.systemGrey6.darkColor
+                              : CupertinoColors.systemBackground,
                           borderRadius: BorderRadius.circular(12.0),
                           border: Border.all(
                             color: CupertinoColors.separator,
@@ -1261,6 +1268,7 @@ class ConfigurationSelector extends StatefulWidget {
   final Function(PcrConfiguration) onDeleteConfiguration;
   final Function(String) onShowError;
   final Function(String) onShowSuccess;
+  final bool isDarkMode;
 
   const ConfigurationSelector({
     super.key,
@@ -1269,6 +1277,7 @@ class ConfigurationSelector extends StatefulWidget {
     required this.onDeleteConfiguration,
     required this.onShowError,
     required this.onShowSuccess,
+    required this.isDarkMode,
   });
 
   @override
@@ -1336,9 +1345,11 @@ class _ConfigurationSelectorState extends State<ConfigurationSelector> {
   Widget build(BuildContext context) {
     return Container(
       height: MediaQuery.of(context).size.height * 0.7,
-      decoration: const BoxDecoration(
-        color: CupertinoColors.systemBackground,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      decoration: BoxDecoration(
+        color: widget.isDarkMode 
+            ? CupertinoColors.systemGrey6.darkColor
+            : CupertinoColors.systemBackground,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
         children: [
@@ -1511,9 +1522,11 @@ class SettingsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       height: MediaQuery.of(context).size.height * 0.6,
-      decoration: const BoxDecoration(
-        color: CupertinoColors.systemBackground,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      decoration: BoxDecoration(
+        color: isDarkMode 
+            ? CupertinoColors.systemGrey6.darkColor
+            : CupertinoColors.systemBackground,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
         children: [
@@ -1557,7 +1570,9 @@ class SettingsPage extends StatelessWidget {
                 // 主題設定卡片
                 Container(
                   decoration: BoxDecoration(
-                    color: CupertinoColors.tertiarySystemBackground,
+                    color: isDarkMode 
+                        ? CupertinoColors.systemGrey5.darkColor
+                        : CupertinoColors.tertiarySystemBackground,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Column(
@@ -1632,7 +1647,9 @@ class SettingsPage extends StatelessWidget {
                 // 應用程式資訊卡片
                 Container(
                   decoration: BoxDecoration(
-                    color: CupertinoColors.tertiarySystemBackground,
+                    color: isDarkMode 
+                        ? CupertinoColors.systemGrey5.darkColor
+                        : CupertinoColors.tertiarySystemBackground,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Column(

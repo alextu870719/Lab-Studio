@@ -739,8 +739,8 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
               // Header row for normal display mode
               if (!_isEditMode)
                 Container(
-                  margin: const EdgeInsets.symmetric(vertical: 4.0),
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                  margin: const EdgeInsets.only(bottom: 2.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
                   child: Row(
                     children: [
                       Expanded(
@@ -782,8 +782,8 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
               // Header row for edit mode
               if (_isEditMode)
                 Container(
-                  margin: const EdgeInsets.symmetric(vertical: 4.0),
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                  margin: const EdgeInsets.only(bottom: 2.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
                   child: Row(
                     children: [
                       Expanded(

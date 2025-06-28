@@ -780,7 +780,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                 ),
               
               for (var i = 0; i < _reagents.length; i++)
-                if (_calculatedTotalVolumes.containsKey(_reagents[i].name))
+                if (_isEditMode || _calculatedTotalVolumes.containsKey(_reagents[i].name))
                   _isEditMode 
                     ? Dismissible(
                         key: ValueKey('${_reagents[i].name}_${_reagents[i].proportion}'),

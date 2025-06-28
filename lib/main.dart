@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:flutter/services.dart';
-import 'package:pcr_reagent_calculator/utils/format_utils.dart';
-import 'package:pcr_reagent_calculator/utils/bank_style_formatters.dart';
+import 'package:lab_studio/utils/format_utils.dart';
+import 'package:lab_studio/utils/bank_style_formatters.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
@@ -67,7 +67,7 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return CupertinoApp(
-      title: 'PCR Reagent Calculator',
+      title: 'Lab Studio',
       theme: CupertinoThemeData(
         brightness: _isDarkMode ? Brightness.dark : Brightness.light,
         primaryColor: CupertinoColors.systemBlue,
@@ -638,7 +638,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
     }
 
     final StringBuffer buffer = StringBuffer();
-    buffer.writeln('PCR Reagent Calculation');
+    buffer.writeln('Lab Studio - PCR Reagent Calculation');
     buffer.writeln('Number of Reactions: ${_numReactionsController.text}');
     buffer.writeln('Custom Reaction Volume: ${_customReactionVolumeController.text} µl');
     buffer.writeln('');
@@ -664,7 +664,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
           return pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
-              pw.Text('PCR Reagent Calculation', style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
+              pw.Text('Lab Studio - PCR Reagent Calculation', style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
               pw.SizedBox(height: 20),
               pw.Text('Number of Reactions: ${_numReactionsController.text}'),
               pw.Text('Custom Reaction Volume: ${_customReactionVolumeController.text} µl'),
@@ -683,7 +683,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
       ),
     );
 
-    await Printing.sharePdf(bytes: await doc.save(), filename: 'pcr_reagent_calculation.pdf');
+    await Printing.sharePdf(bytes: await doc.save(), filename: 'lab_studio_pcr_calculation.pdf');
   }
 
   Widget _buildDisplayReagentRow(Reagent reagent) {
@@ -2141,7 +2141,7 @@ class SettingsPage extends StatelessWidget {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    'PCR Reagent Calculator',
+                                    'Lab Studio',
                                     style: TextStyle(
                                       fontSize: 17,
                                       fontWeight: FontWeight.w600,

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:flutter/services.dart'; // Import for Clipboard
-import 'package:pcr_reagent_calculator/utils/format_utils.dart';
+import 'package:lab_studio/utils/format_utils.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 

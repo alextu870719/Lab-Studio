@@ -1,5 +1,5 @@
-name: pcr_reagent_calculator
-description: "A new Flutter project."
+name: lab_studio
+description: "Professional laboratory experiment design and calculation toolkit. Start with PCR reagent calculations and expand to comprehensive lab workflows."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev

@@ -192,7 +192,8 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
 
       if (waterVolume < 0) {
         _showErrorDialog('Calculated reagent volumes exceed total desired volume. Please check your inputs.');
-        _calculatedTotalVolumes.clear();
+        // In edit mode, keep reagents visible but set water to 0 to show the problem
+        _calculatedTotalVolumes['Nuclease-Free Water'] = 0.0;
       } else {
         _calculatedTotalVolumes['Nuclease-Free Water'] = waterVolume;
       }

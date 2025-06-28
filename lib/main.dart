@@ -155,7 +155,17 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
   void initState() {
     super.initState();
     _initializeEditControllers();
+    _initializeReagentInclusionStatus();
     _calculateVolumes();
+  }
+
+  void _initializeReagentInclusionStatus() {
+    // 初始化 optional 試劑的包含狀態，預設為 true
+    for (var reagent in _reagents) {
+      if (reagent.isOptional) {
+        _reagentInclusionStatus[reagent.name] ??= true;
+      }
+    }
   }
 
   void _initializeEditControllers() {
@@ -217,10 +227,21 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
       for (var reagent in _reagents) {
         if (reagent.name == 'Water') continue;
 
-        double singleReactionVolume = reagent.proportion * totalVolumePerReaction;
-        double totalReagentVolume = singleReactionVolume * numReactions;
-        _calculatedTotalVolumes[reagent.name] = totalReagentVolume;
-        totalCalculatedVolumeExcludingWater += totalReagentVolume;
+        // 檢查 optional 試劑是否被包含
+        bool isIncluded = true;
+        if (reagent.isOptional) {
+          isIncluded = _reagentInclusionStatus[reagent.name] ?? true;
+        }
+
+        if (isIncluded) {
+          double singleReactionVolume = reagent.proportion * totalVolumePerReaction;
+          double totalReagentVolume = singleReactionVolume * numReactions;
+          _calculatedTotalVolumes[reagent.name] = totalReagentVolume;
+          totalCalculatedVolumeExcludingWater += totalReagentVolume;
+        } else {
+          // Optional 試劑未被包含時，設為 0
+          _calculatedTotalVolumes[reagent.name] = 0.0;
+        }
       }
 
       double totalDesiredVolume = totalVolumePerReaction * numReactions;
@@ -291,11 +312,8 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
     
     setState(() {
       _calculatedTotalVolumes.clear();
-      for (var reagent in _reagents) {
-        if (reagent.isOptional) {
-          _reagentInclusionStatus[reagent.name] = false;
-        }
-      }
+      _reagentInclusionStatus.clear();
+      _initializeReagentInclusionStatus();
       // Recalculate volumes to show the cleared results
       _calculateVolumes();
     });
@@ -546,30 +564,61 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
     int numReactions = int.tryParse(_numReactionsController.text) ?? 1;
     double volumePerReaction = numReactions > 0 ? totalVolume / numReactions : 0.0;
     
+    // Check if this reagent is included (for optional reagents)
+    bool isIncluded = _reagentInclusionStatus[reagent.name] ?? true;
+    
     return Row(
       children: [
+        // Optional 開關（只對 optional 試劑顯示）
+        if (reagent.isOptional) ...[
+          CupertinoSwitch(
+            value: isIncluded,
+            onChanged: (bool value) {
+              setState(() {
+                _reagentInclusionStatus[reagent.name] = value;
+                _calculateVolumes();
+              });
+            },
+          ),
+          const SizedBox(width: 8),
+        ],
         Expanded(
           flex: 3,
           child: Text(
-            reagent.name,
-            style: CupertinoTheme.of(context).textTheme.textStyle,
+            reagent.name + (reagent.isOptional ? ' (Optional)' : ''),
+            style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
+              color: reagent.isOptional && !isIncluded 
+                  ? CupertinoColors.secondaryLabel 
+                  : null,
+            ),
           ),
         ),
         Expanded(
           flex: 2,
           child: Text(
-            formatVolume(volumePerReaction),
+            reagent.isOptional && !isIncluded 
+                ? '-' 
+                : formatVolume(volumePerReaction),
             textAlign: TextAlign.center,
-            style: CupertinoTheme.of(context).textTheme.textStyle,
+            style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
+              color: reagent.isOptional && !isIncluded 
+                  ? CupertinoColors.secondaryLabel 
+                  : null,
+            ),
           ),
         ),
         Expanded(
           flex: 2,
           child: Text(
-            formatVolume(totalVolume),
+            reagent.isOptional && !isIncluded 
+                ? '-' 
+                : formatVolume(totalVolume),
             textAlign: TextAlign.end,
             style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
               fontWeight: FontWeight.w600,
+              color: reagent.isOptional && !isIncluded 
+                  ? CupertinoColors.secondaryLabel 
+                  : null,
             ),
           ),
         ),
@@ -653,6 +702,28 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                 ),
                 padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
               ),
+            ),
+            const SizedBox(width: 8),
+            // Optional 開關
+            Column(
+              children: [
+                Text(
+                  'Optional',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: CupertinoColors.secondaryLabel,
+                  ),
+                ),
+                CupertinoSwitch(
+                  value: reagent.isOptional,
+                  onChanged: (bool value) {
+                    setState(() {
+                      _reagents[index] = reagent.copyWith(isOptional: value);
+                      _calculateVolumes();
+                    });
+                  },
+                ),
+              ],
             ),
           ],
         ),

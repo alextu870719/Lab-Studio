@@ -454,27 +454,168 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
       await showCupertinoModalPopup(
         context: context,
         builder: (BuildContext context) {
-          return CupertinoActionSheet(
-            title: const Text('Load Configuration'),
-            actions: configs.map((config) {
-              return CupertinoActionSheetAction(
-                onPressed: () {
-                  _applyConfiguration(config);
-                  Navigator.of(context).pop();
-                },
-                child: Text(config.name),
-              );
-            }).toList(),
-            cancelButton: CupertinoActionSheetAction(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-          );
+          return _buildConfigurationSelector(configs);
         },
       );
     } catch (e) {
       _showErrorDialog('Failed to load configurations: $e');
     }
+  }
+
+  Widget _buildConfigurationSelector(List<PcrConfiguration> configs) {
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.7,
+      decoration: const BoxDecoration(
+        color: CupertinoColors.systemBackground,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Column(
+        children: [
+          // 頂部拖動條
+          Container(
+            width: 36,
+            height: 5,
+            margin: const EdgeInsets.symmetric(vertical: 12),
+            decoration: BoxDecoration(
+              color: CupertinoColors.quaternaryLabel,
+              borderRadius: BorderRadius.circular(2.5),
+            ),
+          ),
+          // 標題
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Load Configuration',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                CupertinoButton(
+                  padding: EdgeInsets.zero,
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Cancel'),
+                ),
+              ],
+            ),
+          ),
+          // 垂直轉盤列表
+          Expanded(
+            child: _buildVerticalConfigurationWheel(configs),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVerticalConfigurationWheel(List<PcrConfiguration> configs) {
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      itemCount: configs.length,
+      itemBuilder: (context, index) {
+        final config = configs[index];
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                CupertinoColors.systemBlue.withOpacity(0.1),
+                CupertinoColors.systemPurple.withOpacity(0.1),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: CupertinoColors.separator,
+              width: 0.5,
+            ),
+          ),
+          child: CupertinoButton(
+            padding: EdgeInsets.zero,
+            onPressed: () {
+              _applyConfiguration(config);
+              Navigator.of(context).pop();
+            },
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              child: Row(
+                children: [
+                  // 配置圖標
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          CupertinoColors.systemBlue,
+                          CupertinoColors.systemPurple,
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      CupertinoIcons.lab_flask,
+                      color: CupertinoColors.white,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  // 配置資訊
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          config.name,
+                          style: const TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${config.numReactions} reactions • ${config.reactionVolume.toStringAsFixed(1)} µl',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: CupertinoColors.secondaryLabel,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // 刪除按鈕
+                  CupertinoButton(
+                    padding: const EdgeInsets.all(8),
+                    onPressed: () {
+                      _showDeleteConfigurationDialog(config, configs);
+                    },
+                    child: Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: CupertinoColors.destructiveRed.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        CupertinoIcons.delete,
+                        color: CupertinoColors.destructiveRed,
+                        size: 18,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   void _applyConfiguration(PcrConfiguration config) {
@@ -783,6 +924,62 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
         );
       },
     );
+  }
+
+  Future<void> _showDeleteConfigurationDialog(PcrConfiguration config, List<PcrConfiguration> configs) async {
+    await showCupertinoDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return CupertinoAlertDialog(
+          title: const Text('Delete Configuration'),
+          content: Text('Are you sure you want to delete "${config.name}"? This action cannot be undone.'),
+          actions: [
+            CupertinoDialogAction(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            CupertinoDialogAction(
+              isDestructiveAction: true,
+              onPressed: () async {
+                Navigator.of(context).pop(); // 關閉確認對話框
+                await _deleteConfiguration(config);
+                Navigator.of(context).pop(); // 關閉配置選擇器
+                // 重新開啟配置選擇器以顯示更新後的列表
+                _loadConfiguration();
+              },
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _deleteConfiguration(PcrConfiguration configToDelete) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      List<String> configStrings = prefs.getStringList('saved_configurations') ?? [];
+      
+      // 解析所有配置並移除指定的配置
+      List<String> updatedConfigStrings = [];
+      for (String configString in configStrings) {
+        try {
+          Map<String, dynamic> jsonData = jsonDecode(configString);
+          PcrConfiguration config = PcrConfiguration.fromJson(jsonData);
+          if (config.name != configToDelete.name) {
+            updatedConfigStrings.add(configString);
+          }
+        } catch (e) {
+          // 保留無法解析的配置（雖然這種情況應該很少發生）
+          updatedConfigStrings.add(configString);
+        }
+      }
+      
+      await prefs.setStringList('saved_configurations', updatedConfigStrings);
+      _showSuccessDialog('Configuration "${configToDelete.name}" deleted successfully.');
+    } catch (e) {
+      _showErrorDialog('Failed to delete configuration: $e');
+    }
   }
 
   // 帶防抖的更新方法，避免編輯模式快速輸入時的性能問題

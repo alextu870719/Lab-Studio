@@ -48,6 +48,19 @@ app.*.map.json
 releases/*.apk
 releases/*.ipa
 releases/*.dmg
-releases/*.zip
-releases/*.tar.gz
-releases/*.exe
+
+# Windows specific build artifacts
+*.exe
+*.zip
+*.tar.gz
+installer_output/
+*-Release/
+*-Windows-Release/
+Lab-Studio-Standalone-*
+Lab-Studio-Portable-*
+Lab-Studio-v*-Windows*
+~*.DDF
+
+# Distribution and packaging
+dist/
+temp_package/

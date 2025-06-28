@@ -736,6 +736,49 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
 
             // Reagents List
             if (_calculatedTotalVolumes.isNotEmpty) ...[
+              // Header row for normal display mode
+              if (!_isEditMode)
+                Container(
+                  margin: const EdgeInsets.symmetric(vertical: 4.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        flex: 3,
+                        child: Text(
+                          'Components',
+                          style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: CupertinoColors.secondaryLabel,
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        flex: 2,
+                        child: Text(
+                          'Vol/rxn',
+                          textAlign: TextAlign.center,
+                          style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: CupertinoColors.secondaryLabel,
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        flex: 2,
+                        child: Text(
+                          'Total',
+                          textAlign: TextAlign.end,
+                          style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: CupertinoColors.secondaryLabel,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              
               for (var i = 0; i < _reagents.length; i++)
                 if (_calculatedTotalVolumes.containsKey(_reagents[i].name))
                   _isEditMode 

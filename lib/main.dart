@@ -639,7 +639,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
             style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
               color: reagent.isOptional && !isIncluded 
                   ? CupertinoColors.secondaryLabel 
-                  : null,
+                  : CupertinoColors.label,
             ),
           ),
         ),
@@ -653,7 +653,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
             style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
               color: reagent.isOptional && !isIncluded 
                   ? CupertinoColors.secondaryLabel 
-                  : null,
+                  : CupertinoColors.label,
             ),
           ),
         ),
@@ -668,7 +668,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
               fontWeight: FontWeight.w600,
               color: reagent.isOptional && !isIncluded 
                   ? CupertinoColors.secondaryLabel 
-                  : null,
+                  : CupertinoColors.label,
             ),
           ),
         ),
@@ -1358,11 +1358,12 @@ class _ConfigurationSelectorState extends State<ConfigurationSelector> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
+                Text(
                   'Load Configuration',
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w600,
+                    color: CupertinoColors.label,
                   ),
                 ),
                 CupertinoButton(
@@ -1445,9 +1446,10 @@ class _ConfigurationSelectorState extends State<ConfigurationSelector> {
                                     children: [
                                       Text(
                                         config.name,
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontSize: 17,
                                           fontWeight: FontWeight.w600,
+                                          color: CupertinoColors.label,
                                         ),
                                       ),
                                       const SizedBox(height: 4),
@@ -1531,11 +1533,12 @@ class SettingsPage extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
+                Text(
                   'Settings',
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.w600,
+                    color: CupertinoColors.label,
                   ),
                 ),
                 CupertinoButton(
@@ -1595,9 +1598,10 @@ class SettingsPage extends StatelessWidget {
                                 children: [
                                   Text(
                                     'Appearance',
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 17,
                                       fontWeight: FontWeight.w600,
+                                      color: CupertinoColors.label,
                                     ),
                                   ),
                                   const SizedBox(height: 2),
@@ -1661,7 +1665,7 @@ class SettingsPage extends StatelessWidget {
                             ),
                             const SizedBox(width: 16),
                             // 標題和描述
-                            const Expanded(
+                            Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
@@ -1670,9 +1674,10 @@ class SettingsPage extends StatelessWidget {
                                     style: TextStyle(
                                       fontSize: 17,
                                       fontWeight: FontWeight.w600,
+                                      color: CupertinoColors.label,
                                     ),
                                   ),
-                                  SizedBox(height: 2),
+                                  const SizedBox(height: 2),
                                   Text(
                                     'Version 1.0.0',
                                     style: TextStyle(

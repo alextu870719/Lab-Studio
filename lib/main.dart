@@ -2095,6 +2095,17 @@ class PcrProtocol {
     
     return totalSeconds / 60.0; // 轉換為分鐘
   }
+  
+  // 創建副本
+  PcrProtocol copyWith({
+    String? name,
+    List<PcrStage>? stages,
+  }) {
+    return PcrProtocol(
+      name: name ?? this.name,
+      stages: stages ?? this.stages,
+    );
+  }
 }
 
 // PCR Reaction 頁面
@@ -2115,7 +2126,7 @@ class PcrReactionPage extends StatefulWidget {
 class _PcrReactionPageState extends State<PcrReactionPage> {
   final TextEditingController _protocolNameController = TextEditingController();
   
-  final String _currentProtocolName = 'Standard PCR Protocol';
+  String _currentProtocolName = 'Standard PCR Protocol';
   bool _isEditMode = false;
   
   // 可編輯的 Stage 列表
@@ -2599,6 +2610,278 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
     }
     
     Clipboard.setData(ClipboardData(text: buffer.toString()));
+  }
+  
+  // 保存配置
+  Future<void> _saveConfiguration() async {
+    final TextEditingController nameController = TextEditingController(text: _currentProtocolName);
+    
+    await showCupertinoDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return CupertinoAlertDialog(
+          title: Text(
+            'Save Protocol',
+            style: TextStyle(color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 16),
+              CupertinoTextField(
+                controller: nameController,
+                placeholder: 'Protocol Name',
+                style: TextStyle(color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
+                placeholderStyle: TextStyle(color: CupertinoColors.placeholderText),
+                decoration: BoxDecoration(
+                  color: CupertinoColors.tertiarySystemBackground,
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            CupertinoDialogAction(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(
+                'Cancel',
+                style: TextStyle(color: CupertinoColors.systemBlue),
+              ),
+            ),
+            CupertinoDialogAction(
+              onPressed: () async {
+                if (nameController.text.trim().isNotEmpty) {
+                  Navigator.of(context).pop();
+                  await _saveConfigurationWithName(nameController.text.trim());
+                }
+              },
+              child: Text(
+                'Save',
+                style: TextStyle(color: CupertinoColors.systemBlue),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _saveConfigurationWithName(String name) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      
+      final protocol = _getCurrentProtocol().copyWith(name: name);
+      
+      List<String> existingProtocols = prefs.getStringList('saved_protocols') ?? [];
+      
+      // 檢查是否已經存在同名協議，如果存在則替換
+      String newProtocolJson = jsonEncode(protocol.toJson());
+      int existingIndex = -1;
+      
+      for (int i = 0; i < existingProtocols.length; i++) {
+        try {
+          Map<String, dynamic> existingJson = jsonDecode(existingProtocols[i]);
+          if (existingJson['name'] == name) {
+            existingIndex = i;
+            break;
+          }
+        } catch (e) {
+          // 如果解析現有協議失敗，標記為需要移除
+          print('Found invalid existing protocol at index $i: $e');
+        }
+      }
+      
+      if (existingIndex >= 0) {
+        // 替換現有協議
+        existingProtocols[existingIndex] = newProtocolJson;
+      } else {
+        // 新增協議
+        existingProtocols.add(newProtocolJson);
+      }
+      
+      await prefs.setStringList('saved_protocols', existingProtocols);
+      
+      setState(() {
+        _currentProtocolName = name;
+        _protocolNameController.text = name;
+      });
+      
+      _showSuccessDialog('Protocol "$name" saved successfully!');
+    } catch (e) {
+      _showErrorDialog('Failed to save protocol: $e');
+    }
+  }
+
+  // 載入配置
+  Future<void> _loadConfiguration() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      List<String> protocolStrings = prefs.getStringList('saved_protocols') ?? [];
+      
+      if (protocolStrings.isEmpty) {
+        _showErrorDialog('No saved protocols found.');
+        return;
+      }
+
+      List<PcrProtocol> protocols = [];
+      List<String> validProtocolStrings = [];
+      
+      // 逐一解析協議，過濾掉損壞的協議
+      for (int i = 0; i < protocolStrings.length; i++) {
+        try {
+          String protocolString = protocolStrings[i].trim();
+          if (protocolString.isEmpty) continue;
+          
+          // 嘗試解析 JSON
+          Map<String, dynamic> jsonData = jsonDecode(protocolString);
+          PcrProtocol protocol = PcrProtocol.fromJson(jsonData);
+          protocols.add(protocol);
+          validProtocolStrings.add(protocolString);
+        } catch (e) {
+          print('Skipping invalid protocol at index $i: $e');
+          print('Invalid protocol string: "${protocolStrings[i]}"');
+          // 跳過損壞的協議，繼續處理其他協議
+        }
+      }
+      
+      // 如果有有效的協議被清理掉，更新儲存的列表
+      if (validProtocolStrings.length != protocolStrings.length) {
+        await prefs.setStringList('saved_protocols', validProtocolStrings);
+        print('Cleaned ${protocolStrings.length - validProtocolStrings.length} invalid protocols');
+      }
+      
+      if (protocols.isEmpty) {
+        _showErrorDialog('No valid protocols found. Invalid protocols have been cleaned.');
+        return;
+      }
+
+      await showCupertinoModalPopup(
+        context: context,
+        builder: (BuildContext context) {
+          return ProtocolSelector(
+            initialProtocols: protocols,
+            onProtocolSelected: (protocol) {
+              _applyConfiguration(protocol);
+              Navigator.of(context).pop();
+            },
+            onDeleteProtocol: _deleteConfiguration,
+            onShowError: _showErrorDialog,
+            onShowSuccess: _showSuccessDialog,
+            isDarkMode: widget.isDarkMode,
+          );
+        },
+      );
+    } catch (e) {
+      _showErrorDialog('Failed to load protocols: $e');
+    }
+  }
+
+  void _applyConfiguration(PcrProtocol protocol) {
+    try {
+      setState(() {
+        // 清理舊的 stages
+        for (var stage in _stages) {
+          stage.dispose();
+        }
+        _stages.clear();
+        
+        // 從協議重建 stages
+        for (var stage in protocol.stages) {
+          _stages.add(EditablePcrStage.fromPcrStage(stage));
+        }
+        
+        _currentProtocolName = protocol.name;
+        _protocolNameController.text = protocol.name;
+      });
+    } catch (e) {
+      _showErrorDialog('Failed to apply protocol: $e');
+    }
+  }
+
+  Future<void> _deleteConfiguration(PcrProtocol protocolToDelete) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      List<String> protocolStrings = prefs.getStringList('saved_protocols') ?? [];
+      
+      // 解析所有協議並移除指定的協議
+      List<String> updatedProtocolStrings = [];
+      for (String protocolString in protocolStrings) {
+        try {
+          Map<String, dynamic> jsonData = jsonDecode(protocolString);
+          PcrProtocol protocol = PcrProtocol.fromJson(jsonData);
+          if (protocol.name != protocolToDelete.name) {
+            updatedProtocolStrings.add(protocolString);
+          }
+        } catch (e) {
+          // 保留無法解析的協議（雖然這種情況應該很少發生）
+          updatedProtocolStrings.add(protocolString);
+        }
+      }
+      
+      await prefs.setStringList('saved_protocols', updatedProtocolStrings);
+      // 移除這裡的成功訊息顯示，讓調用方來處理
+    } catch (e) {
+      // 拋出異常讓調用方處理錯誤訊息
+      throw Exception('Failed to delete protocol: $e');
+    }
+  }
+
+  void _showErrorDialog(String message) {
+    showCupertinoDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return CupertinoAlertDialog(
+          title: Text(
+            'Error',
+            style: TextStyle(color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
+          ),
+          content: Text(
+            message,
+            style: TextStyle(color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
+          ),
+          actions: <Widget>[
+            CupertinoDialogAction(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text(
+                'OK',
+                style: TextStyle(color: CupertinoColors.systemBlue),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showSuccessDialog(String message) {
+    showCupertinoDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return CupertinoAlertDialog(
+          title: Text(
+            'Success',
+            style: TextStyle(color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
+          ),
+          content: Text(
+            message,
+            style: TextStyle(color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
+          ),
+          actions: <Widget>[
+            CupertinoDialogAction(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text(
+                'OK',
+                style: TextStyle(color: CupertinoColors.systemBlue),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
   
   // 清除所有輸入
@@ -3200,6 +3483,26 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
                       children: [
                         Expanded(
                           child: CupertinoButton.filled(
+                            onPressed: _saveConfiguration,
+                            child: Text(
+                              'Save',
+                              style: TextStyle(color: CupertinoColors.white),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: CupertinoButton.filled(
+                            onPressed: _loadConfiguration,
+                            child: Text(
+                              'Load',
+                              style: TextStyle(color: CupertinoColors.white),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: CupertinoButton.filled(
                             onPressed: _clearAllInputs,
                             child: Text(
                               'Clear',
@@ -3207,7 +3510,7 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
                             ),
                           ),
                         ),
-                        const SizedBox(width: 16),
+                        const SizedBox(width: 8),
                         Expanded(
                           child: CupertinoButton.filled(
                             onPressed: _copyProtocol,
@@ -3663,104 +3966,311 @@ class _ConfigurationSelectorState extends State<ConfigurationSelector> {
               : CupertinoColors.systemBackground,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         ),
-      child: Column(
-        children: [
-          // 頂部拖動條
-          Container(
-            width: 36,
-            height: 5,
-            margin: const EdgeInsets.symmetric(vertical: 12),
-            decoration: BoxDecoration(
-              color: CupertinoColors.quaternaryLabel,
-              borderRadius: BorderRadius.circular(2.5),
+        child: Column(
+          children: [
+            // 頂部拖動條
+            Container(
+              width: 36,
+              height: 5,
+              margin: const EdgeInsets.symmetric(vertical: 12),
+              decoration: BoxDecoration(
+                color: CupertinoColors.quaternaryLabel,
+                borderRadius: BorderRadius.circular(2.5),
+              ),
             ),
-          ),
-          // 標題
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Load Configuration',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                    color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
-                  ),
-                ),
-                CupertinoButton(
-                  padding: EdgeInsets.zero,
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: Text(
-                    'Cancel',
-                    style: TextStyle(color: CupertinoColors.systemBlue),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // 配置列表
-          Expanded(
-            child: configs.isEmpty
-                ? Center(
-                    child: Text(
-                      'No saved configurations',
-                      style: TextStyle(
-                        color: widget.isDarkMode ? CupertinoColors.systemGrey2 : CupertinoColors.secondaryLabel,
-                        fontSize: 16,
-                      ),
+            // 標題
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Load Configuration',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                      color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
                     ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    itemCount: configs.length,
-                    itemBuilder: (context, index) {
-                      final config = configs[index];
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        child: CupertinoListTile(
-                          title: Text(
-                            config.name,
-                            style: TextStyle(
-                              color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
-                            ),
-                          ),
-                          subtitle: Text(
-                            '${config.numReactions} reactions, ${config.reactionVolume}µl',
-                            style: TextStyle(
-                              color: widget.isDarkMode ? CupertinoColors.systemGrey2 : CupertinoColors.secondaryLabel,
-                            ),
-                          ),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              CupertinoButton(
-                                padding: EdgeInsets.zero,
-                                onPressed: () => _handleDeleteConfiguration(config),
-                                child: Icon(
-                                  CupertinoIcons.delete,
-                                  color: CupertinoColors.destructiveRed,
-                                  size: 20,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Icon(
-                                CupertinoIcons.forward,
-                                color: CupertinoColors.systemGrey,
-                                size: 16,
-                              ),
-                            ],
-                          ),
-                          onTap: () => widget.onConfigurationSelected(config),
-                        ),
-                      );
-                    },
                   ),
-          ),
-        ],
+                  CupertinoButton(
+                    padding: EdgeInsets.zero,
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: Text(
+                      'Cancel',
+                      style: TextStyle(color: CupertinoColors.systemBlue),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // 配置列表
+            Expanded(
+              child: configs.isEmpty
+                  ? Center(
+                      child: Text(
+                        'No saved configurations',
+                        style: TextStyle(
+                          color: widget.isDarkMode ? CupertinoColors.systemGrey2 : CupertinoColors.secondaryLabel,
+                          fontSize: 16,
+                        ),
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      itemCount: configs.length,
+                      itemBuilder: (context, index) {
+                        final config = configs[index];
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          child: CupertinoListTile(
+                            title: Text(
+                              config.name,
+                              style: TextStyle(
+                                color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
+                              ),
+                            ),
+                            subtitle: Text(
+                              '${config.numReactions} reactions, ${config.reactionVolume}µl',
+                              style: TextStyle(
+                                color: widget.isDarkMode ? CupertinoColors.systemGrey2 : CupertinoColors.secondaryLabel,
+                              ),
+                            ),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                CupertinoButton(
+                                  padding: EdgeInsets.zero,
+                                  onPressed: () => _handleDeleteConfiguration(config),
+                                  child: Icon(
+                                    CupertinoIcons.delete,
+                                    color: CupertinoColors.destructiveRed,
+                                    size: 20,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Icon(
+                                  CupertinoIcons.forward,
+                                  color: CupertinoColors.systemGrey,
+                                  size: 16,
+                                ),
+                              ],
+                            ),
+                            onTap: () => widget.onConfigurationSelected(config),
+                          ),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
       ),
-      ), // Container (wrapped by GestureDetector)
-    ); // GestureDetector
+    );
+  }
+}
+
+// Protocol Selector
+class ProtocolSelector extends StatefulWidget {
+  final List<PcrProtocol> initialProtocols;
+  final Function(PcrProtocol) onProtocolSelected;
+  final Function(PcrProtocol) onDeleteProtocol;
+  final Function(String) onShowError;
+  final Function(String) onShowSuccess;
+  final bool isDarkMode;
+
+  const ProtocolSelector({
+    super.key,
+    required this.initialProtocols,
+    required this.onProtocolSelected,
+    required this.onDeleteProtocol,
+    required this.onShowError,
+    required this.onShowSuccess,
+    required this.isDarkMode,
+  });
+
+  @override
+  State<ProtocolSelector> createState() => _ProtocolSelectorState();
+}
+
+class _ProtocolSelectorState extends State<ProtocolSelector> {
+  late List<PcrProtocol> protocols;
+
+  @override
+  void initState() {
+    super.initState();
+    protocols = List.from(widget.initialProtocols);
+  }
+
+  Future<void> _handleDeleteProtocol(PcrProtocol protocol) async {
+    // 顯示確認對話框
+    final bool? shouldDelete = await showCupertinoDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return CupertinoAlertDialog(
+          title: Text(
+            'Delete Protocol',
+            style: TextStyle(color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
+          ),
+          content: Text(
+            'Are you sure you want to delete "${protocol.name}"? This action cannot be undone.',
+            style: TextStyle(color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
+          ),
+          actions: [
+            CupertinoDialogAction(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(
+                'Cancel',
+                style: TextStyle(color: CupertinoColors.systemBlue),
+              ),
+            ),
+            CupertinoDialogAction(
+              isDestructiveAction: true,
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text(
+                'Delete',
+                style: TextStyle(color: CupertinoColors.destructiveRed),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldDelete == true) {
+      try {
+        // 執行刪除操作
+        await widget.onDeleteProtocol(protocol);
+        
+        // 更新本地列表
+        setState(() {
+          protocols.removeWhere((p) => p.name == protocol.name);
+        });
+        
+        widget.onShowSuccess('Protocol "${protocol.name}" deleted successfully.');
+        
+        // 如果沒有協議了，關閉選擇器
+        if (protocols.isEmpty) {
+          if (mounted) {
+            Navigator.of(context).pop();
+            widget.onShowError('No protocols available.');
+          }
+        }
+      } catch (e) {
+        widget.onShowError('Failed to delete protocol: $e');
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      behavior: HitTestBehavior.translucent,
+      child: Container(
+        height: MediaQuery.of(context).size.height * 0.7,
+        decoration: BoxDecoration(
+          color: widget.isDarkMode 
+              ? CupertinoColors.systemGrey6.darkColor
+              : CupertinoColors.systemBackground,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          children: [
+            // 頂部拖動條
+            Container(
+              width: 36,
+              height: 5,
+              margin: const EdgeInsets.symmetric(vertical: 12),
+              decoration: BoxDecoration(
+                color: CupertinoColors.quaternaryLabel,
+                borderRadius: BorderRadius.circular(2.5),
+              ),
+            ),
+            // 標題
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Load Protocol',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                      color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
+                    ),
+                  ),
+                  CupertinoButton(
+                    padding: EdgeInsets.zero,
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: Text(
+                      'Cancel',
+                      style: TextStyle(color: CupertinoColors.systemBlue),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // 協議列表
+            Expanded(
+              child: protocols.isEmpty
+                  ? Center(
+                      child: Text(
+                        'No saved protocols',
+                        style: TextStyle(
+                          color: widget.isDarkMode ? CupertinoColors.systemGrey2 : CupertinoColors.secondaryLabel,
+                          fontSize: 16,
+                        ),
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      itemCount: protocols.length,
+                      itemBuilder: (context, index) {
+                        final protocol = protocols[index];
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          child: CupertinoListTile(
+                            title: Text(
+                              protocol.name,
+                              style: TextStyle(
+                                color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
+                              ),
+                            ),
+                            subtitle: Text(
+                              '${protocol.stages.length} stages, ${protocol.getTotalTime().toStringAsFixed(1)} min',
+                              style: TextStyle(
+                                color: widget.isDarkMode ? CupertinoColors.systemGrey2 : CupertinoColors.secondaryLabel,
+                              ),
+                            ),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                CupertinoButton(
+                                  padding: EdgeInsets.zero,
+                                  onPressed: () => _handleDeleteProtocol(protocol),
+                                  child: Icon(
+                                    CupertinoIcons.delete,
+                                    color: CupertinoColors.destructiveRed,
+                                    size: 20,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Icon(
+                                  CupertinoIcons.forward,
+                                  color: CupertinoColors.systemGrey,
+                                  size: 16,
+                                ),
+                              ],
+                            ),
+                            onTap: () => widget.onProtocolSelected(protocol),
+                          ),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

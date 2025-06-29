@@ -2257,6 +2257,78 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
       });
     }
   }
+
+  // 顯示刪除 Stage 確認對話框
+  Future<bool?> _showDeleteStageConfirmation(String stageName) async {
+    return await showCupertinoDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return CupertinoAlertDialog(
+          title: Text(
+            'Delete Stage',
+            style: TextStyle(color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
+          ),
+          content: Text(
+            'Are you sure you want to delete "$stageName"?',
+            style: TextStyle(color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
+          ),
+          actions: [
+            CupertinoDialogAction(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(
+                'Cancel',
+                style: TextStyle(color: CupertinoColors.systemBlue),
+              ),
+            ),
+            CupertinoDialogAction(
+              isDestructiveAction: true,
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text(
+                'Delete',
+                style: TextStyle(color: CupertinoColors.destructiveRed),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // 顯示刪除 Step 確認對話框
+  Future<bool?> _showDeleteStepConfirmation(String stepName) async {
+    return await showCupertinoDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return CupertinoAlertDialog(
+          title: Text(
+            'Delete Step',
+            style: TextStyle(color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
+          ),
+          content: Text(
+            'Are you sure you want to delete "$stepName"?',
+            style: TextStyle(color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
+          ),
+          actions: [
+            CupertinoDialogAction(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(
+                'Cancel',
+                style: TextStyle(color: CupertinoColors.systemBlue),
+              ),
+            ),
+            CupertinoDialogAction(
+              isDestructiveAction: true,
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text(
+                'Delete',
+                style: TextStyle(color: CupertinoColors.destructiveRed),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
   
   // 移動 Stage 的方法 (待實現拖拽功能時使用)
   // void _moveStage(int oldIndex, int newIndex) { ... }
@@ -3029,8 +3101,7 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
   
   // UI 建構方法
   Widget _buildStageCard(EditablePcrStage stage, int stageIndex) {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8.0),
+    Widget stageCardContent = Container(
       decoration: BoxDecoration(
         color: widget.isDarkMode 
             ? CupertinoColors.systemGrey6.darkColor
@@ -3184,11 +3255,49 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
         ],
       ),
     );
+    
+    // 在編輯模式下添加左滑刪除功能
+    if (_isEditMode) {
+      return Container(
+        margin: const EdgeInsets.symmetric(vertical: 8.0),
+        child: Dismissible(
+          key: ValueKey(stage.id),
+          direction: DismissDirection.endToStart,
+          dismissThresholds: const {
+            DismissDirection.endToStart: 0.6,
+          },
+          confirmDismiss: (direction) async {
+            return await _showDeleteStageConfirmation(stage.nameController.text);
+          },
+          onDismissed: (direction) {
+            _deleteStage(stageIndex);
+          },
+          background: Container(
+            decoration: BoxDecoration(
+              color: CupertinoColors.destructiveRed,
+              borderRadius: BorderRadius.circular(12.0),
+            ),
+            alignment: Alignment.centerRight,
+            padding: const EdgeInsets.only(right: 20.0),
+            child: const Icon(
+              CupertinoIcons.delete,
+              color: CupertinoColors.white,
+              size: 24,
+            ),
+          ),
+          child: stageCardContent,
+        ),
+      );
+    } else {
+      return Container(
+        margin: const EdgeInsets.symmetric(vertical: 8.0),
+        child: stageCardContent,
+      );
+    }
   }
   
   Widget _buildStepCard(EditablePcrStep step, int stageIndex, int stepIndex) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 8.0),
+    Widget stepCardContent = Container(
       padding: const EdgeInsets.all(12.0),
       decoration: BoxDecoration(
         color: widget.isDarkMode 
@@ -3363,6 +3472,45 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
         ],
       ),
     );
+    
+    // 在編輯模式下添加左滑刪除功能
+    if (_isEditMode) {
+      return Container(
+        margin: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 8.0),
+        child: Dismissible(
+          key: ValueKey(step.id),
+          direction: DismissDirection.endToStart,
+          dismissThresholds: const {
+            DismissDirection.endToStart: 0.6,
+          },
+          confirmDismiss: (direction) async {
+            return await _showDeleteStepConfirmation(step.nameController.text);
+          },
+          onDismissed: (direction) {
+            _deleteStep(stageIndex, stepIndex);
+          },
+          background: Container(
+            decoration: BoxDecoration(
+              color: CupertinoColors.destructiveRed,
+              borderRadius: BorderRadius.circular(8.0),
+            ),
+            alignment: Alignment.centerRight,
+            padding: const EdgeInsets.only(right: 20.0),
+            child: const Icon(
+              CupertinoIcons.delete,
+              color: CupertinoColors.white,
+              size: 20,
+            ),
+          ),
+          child: stepCardContent,
+        ),
+      );
+    } else {
+      return Container(
+        margin: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 8.0),
+        child: stepCardContent,
+      );
+    }
   }
   
   @override

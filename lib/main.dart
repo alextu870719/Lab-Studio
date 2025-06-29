@@ -2704,11 +2704,11 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
                         padding: const pw.EdgeInsets.only(left: 20),
                         child: pw.Text('Step ${j + 1}: ${step.name} - ${step.temperature}°C for ${_formatTime(step.duration)}'),
                       );
-                    }).toList(),
+                    }),
                     pw.SizedBox(height: 10),
                   ],
                 );
-              }).toList(),
+              }),
             ],
           );
         },

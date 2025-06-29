@@ -75,13 +75,42 @@ class _MyAppState extends State<MyApp> {
             ? CupertinoColors.black
             : CupertinoColors.systemGroupedBackground,
       ),
-      home: PcrCalculatorPage(
-        onToggleTheme: _toggleTheme,
-        isDarkMode: _isDarkMode,
-        onToggleExperimentTracking: _toggleExperimentTracking,
-        isExperimentTrackingMode: _isExperimentTrackingMode,
-        trackingDisplayMode: _trackingDisplayMode,
-        onSetTrackingDisplayMode: _setTrackingDisplayMode,
+      home: CupertinoTabScaffold(
+        tabBar: CupertinoTabBar(
+          backgroundColor: _isDarkMode 
+              ? CupertinoColors.systemGrey6.darkColor
+              : CupertinoColors.systemBackground,
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(CupertinoIcons.lab_flask),
+              label: 'Calculator',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(CupertinoIcons.gear_alt),
+              label: 'Reaction',
+            ),
+          ],
+        ),
+        tabBuilder: (BuildContext context, int index) {
+          switch (index) {
+            case 0:
+              return PcrCalculatorPage(
+                onToggleTheme: _toggleTheme,
+                isDarkMode: _isDarkMode,
+                onToggleExperimentTracking: _toggleExperimentTracking,
+                isExperimentTrackingMode: _isExperimentTrackingMode,
+                trackingDisplayMode: _trackingDisplayMode,
+                onSetTrackingDisplayMode: _setTrackingDisplayMode,
+              );
+            case 1:
+              return PcrReactionPage(
+                isDarkMode: _isDarkMode,
+                onToggleTheme: _toggleTheme,
+              );
+            default:
+              return Container();
+          }
+        },
       ),
     );
   }
@@ -124,7 +153,6 @@ class Reagent {
 
   factory Reagent.fromJson(Map<String, dynamic> json) {
     return Reagent(
-      id: json['id'],  // 從 JSON 載入時保持 ID
       name: json['name'] ?? '',
       proportion: (json['proportion'] ?? 0.0).toDouble(),
       isOptional: json['isOptional'] ?? false,
@@ -1334,7 +1362,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
       ),
       child: GestureDetector(
         onTap: () {
-          // 點擊空白處時關閉鍵盤
+          // 點擊空白處關閉鍵盤
           FocusScope.of(context).unfocus();
         },
         child: SafeArea(
@@ -1616,144 +1644,817 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                 ),
               ],
             ),
-            const SizedBox(height: 8),
-
-            // Reagents List
+            const SizedBox(height: 8),            // Reagents List
             // Always show reagents list, even if calculations are empty
-            ...[
-              // Header row for normal display mode
-              if (!_isEditMode)
-                Container(
-                  margin: const EdgeInsets.only(bottom: 2.0),
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        flex: 3,
-                        child: Text(
-                          'Components',
-                          style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.secondaryLabel,
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        flex: 2,
-                        child: Text(
-                          'µl/rxn',
-                          textAlign: TextAlign.center,
-                          style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.secondaryLabel,
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        flex: 2,
-                        child: Text(
-                          'Total',
-                          textAlign: TextAlign.end,
-                          style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.secondaryLabel,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              
-              // Header row for edit mode
-              if (_isEditMode)
-                Container(
-                  margin: const EdgeInsets.only(bottom: 2.0),
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        flex: 3,
-                        child: Text(
-                          'Components',
-                          style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.secondaryLabel,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        flex: 2,
-                        child: Text(
-                          '50 µl/rxn',
-                          textAlign: TextAlign.center,
-                          style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.secondaryLabel,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Optional',
+            // Header row for normal display mode
+            if (!_isEditMode)
+              Container(
+                margin: const EdgeInsets.only(bottom: 2.0),
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
+                child: Row(
+                  children: [
+                    Expanded(
+                      flex: 3,
+                      child: Text(
+                        'Components',
                         style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
                           fontWeight: FontWeight.w600,
                           color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.secondaryLabel,
                         ),
                       ),
+                    ),
+                    Expanded(
+                      flex: 2,
+                      child: Text(
+                        'µl/rxn',
+                        textAlign: TextAlign.center,
+                        style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.secondaryLabel,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      flex: 2,
+                      child: Text(
+                        'Total',
+                        textAlign: TextAlign.end,
+                        style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.secondaryLabel,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            
+            // Header row for edit mode
+            if (_isEditMode)
+              Container(
+                margin: const EdgeInsets.only(bottom: 2.0),
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 6.0),
+                child: Row(
+                  children: [
+                    Expanded(
+                      flex: 3,
+                      child: Text(
+                        'Components',
+                        style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.secondaryLabel,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      flex: 2,
+                      child: Text(
+                        '50 µl/rxn',
+                        textAlign: TextAlign.center,
+                        style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.secondaryLabel,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Optional',
+                      style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.secondaryLabel,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            
+            // 編輯模式：支援拖拽排序的試劑清單
+            if (_isEditMode) ...[
+              ..._buildDraggableReagentsList(),
+              // Add new reagent button in edit mode
+              Container(
+                margin: const EdgeInsets.symmetric(vertical: 4.0),
+                child: CupertinoButton(
+                  onPressed: _addNewReagent,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(CupertinoIcons.add),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Add New Reagent',
+                        style: TextStyle(
+                          color: CupertinoColors.systemBlue,
+                        ),
+                      ),
                     ],
                   ),
                 ),
-              
-              // 編輯模式：支援拖拽排序的試劑清單
-              if (_isEditMode)
-                ..._buildDraggableReagentsList()
-              // 正常顯示模式
-              else
-                for (var i = 0; i < _reagents.length; i++)
-                  if (_calculatedTotalVolumes.containsKey(_reagents[i].name))
-                    Container(
-                      margin: const EdgeInsets.symmetric(vertical: 4.0),
-                      decoration: BoxDecoration(
-                        color: widget.isDarkMode 
-                            ? CupertinoColors.systemGrey6.darkColor
-                            : CupertinoColors.systemBackground,
-                        borderRadius: BorderRadius.circular(12.0),
-                        border: Border.all(
-                          color: CupertinoColors.separator,
-                          width: 0.5,
-                        ),
-                      ),
-                      padding: const EdgeInsets.all(16.0),
-                      child: _buildDisplayReagentRow(_reagents[i]),
-                    ),
-              
-              // Add new reagent button in edit mode
-              if (_isEditMode)
-                Container(
-                  margin: const EdgeInsets.symmetric(vertical: 4.0),
-                  child: CupertinoButton(
-                    onPressed: _addNewReagent,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(CupertinoIcons.add),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Add New Reagent',
-                          style: TextStyle(
-                            color: CupertinoColors.systemBlue,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+              ),
             ],
+            // 正常顯示模式
+            if (!_isEditMode)
+              for (var i = 0; i < _reagents.length; i++)
+                if (_calculatedTotalVolumes.containsKey(_reagents[i].name))
+                  Container(
+                    margin: const EdgeInsets.symmetric(vertical: 4.0),
+                    decoration: BoxDecoration(
+                      color: widget.isDarkMode 
+                          ? CupertinoColors.systemGrey6.darkColor
+                          : CupertinoColors.systemBackground,
+                      borderRadius: BorderRadius.circular(12.0),
+                      border: Border.all(
+                        color: CupertinoColors.separator,
+                        width: 0.5,
+                      ),
+                    ),
+                    padding: const EdgeInsets.all(16.0),
+                    child: _buildDisplayReagentRow(_reagents[i]),
+                  ),
           ],
         ),
       ), // SafeArea
       ), // GestureDetector
+    );
+  }
+}
+
+// PCR Reaction 設定相關的數據模型
+class PcrStep {
+  final String name;
+  final double temperature;
+  final int duration; // 秒
+  final bool isEnabled;
+  
+  PcrStep({
+    required this.name,
+    required this.temperature,
+    required this.duration,
+    this.isEnabled = true,
+  });
+  
+  PcrStep copyWith({
+    String? name,
+    double? temperature,
+    int? duration,
+    bool? isEnabled,
+  }) {
+    return PcrStep(
+      name: name ?? this.name,
+      temperature: temperature ?? this.temperature,
+      duration: duration ?? this.duration,
+      isEnabled: isEnabled ?? this.isEnabled,
+    );
+  }
+  
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'temperature': temperature,
+      'duration': duration,
+      'isEnabled': isEnabled,
+    };
+  }
+  
+  factory PcrStep.fromJson(Map<String, dynamic> json) {
+    return PcrStep(
+      name: json['name'] ?? '',
+      temperature: (json['temperature'] ?? 0.0).toDouble(),
+      duration: json['duration'] ?? 0,
+      isEnabled: json['isEnabled'] ?? true,
+    );
+  }
+}
+
+class PcrProtocol {
+  final String name;
+  final PcrStep initialDenaturation;
+  final PcrStep denaturation;
+  final PcrStep annealing;
+  final PcrStep extension;
+  final PcrStep finalExtension;
+  final int cycles;
+  
+  PcrProtocol({
+    required this.name,
+    required this.initialDenaturation,
+    required this.denaturation,
+    required this.annealing,
+    required this.extension,
+    required this.finalExtension,
+    required this.cycles,
+  });
+  
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'initialDenaturation': initialDenaturation.toJson(),
+      'denaturation': denaturation.toJson(),
+      'annealing': annealing.toJson(),
+      'extension': extension.toJson(),
+      'finalExtension': finalExtension.toJson(),
+      'cycles': cycles,
+    };
+  }
+  
+  factory PcrProtocol.fromJson(Map<String, dynamic> json) {
+    return PcrProtocol(
+      name: json['name'] ?? '',
+      initialDenaturation: PcrStep.fromJson(json['initialDenaturation'] ?? {}),
+      denaturation: PcrStep.fromJson(json['denaturation'] ?? {}),
+      annealing: PcrStep.fromJson(json['annealing'] ?? {}),
+      extension: PcrStep.fromJson(json['extension'] ?? {}),
+      finalExtension: PcrStep.fromJson(json['finalExtension'] ?? {}),
+      cycles: json['cycles'] ?? 30,
+    );
+  }
+  
+  // 計算總時間（分鐘）
+  double getTotalTime() {
+    double totalSeconds = 0;
+    
+    if (initialDenaturation.isEnabled) {
+      totalSeconds += initialDenaturation.duration;
+    }
+    
+    // 循環步驟
+    totalSeconds += (denaturation.duration + annealing.duration + extension.duration) * cycles;
+    
+    if (finalExtension.isEnabled) {
+      totalSeconds += finalExtension.duration;
+    }
+    
+    return totalSeconds / 60.0; // 轉換為分鐘
+  }
+}
+
+class PcrReactionPage extends StatefulWidget {
+  final bool isDarkMode;
+  final VoidCallback onToggleTheme;
+  
+  const PcrReactionPage({
+    super.key,
+    required this.isDarkMode,
+    required this.onToggleTheme,
+  });
+  
+  @override
+  State<PcrReactionPage> createState() => _PcrReactionPageState();
+}
+
+class _PcrReactionPageState extends State<PcrReactionPage> {
+  final TextEditingController _protocolNameController = TextEditingController();
+  final TextEditingController _cyclesController = TextEditingController(text: '30');
+  
+  // 各步驟的溫度和時間控制器
+  final TextEditingController _initialDenTempController = TextEditingController(text: '95.0');
+  final TextEditingController _initialDenTimeController = TextEditingController(text: '300');
+  
+  final TextEditingController _denTempController = TextEditingController(text: '95.0');
+  final TextEditingController _denTimeController = TextEditingController(text: '30');
+  
+  final TextEditingController _annTempController = TextEditingController(text: '55.0');
+  final TextEditingController _annTimeController = TextEditingController(text: '30');
+  
+  final TextEditingController _extTempController = TextEditingController(text: '72.0');
+  final TextEditingController _extTimeController = TextEditingController(text: '60');
+  
+  final TextEditingController _finalExtTempController = TextEditingController(text: '72.0');
+  final TextEditingController _finalExtTimeController = TextEditingController(text: '600');
+  
+  String _currentProtocolName = 'Standard PCR Protocol';
+  bool _initialDenaturationEnabled = true;
+  bool _finalExtensionEnabled = true;
+  
+  @override
+  void initState() {
+    super.initState();
+    _protocolNameController.text = _currentProtocolName;
+    _loadDefaultProtocols();
+  }
+  
+  @override
+  void dispose() {
+    _protocolNameController.dispose();
+    _cyclesController.dispose();
+    _initialDenTempController.dispose();
+    _initialDenTimeController.dispose();
+    _denTempController.dispose();
+    _denTimeController.dispose();
+    _annTempController.dispose();
+    _annTimeController.dispose();
+    _extTempController.dispose();
+    _extTimeController.dispose();
+    _finalExtTempController.dispose();
+    _finalExtTimeController.dispose();
+    super.dispose();
+  }
+  
+  void _loadDefaultProtocols() {
+    // 載入預設協議或從 SharedPreferences 載入已保存的協議
+  }
+  
+  PcrProtocol _getCurrentProtocol() {
+    return PcrProtocol(
+      name: _protocolNameController.text.isNotEmpty ? _protocolNameController.text : 'Unnamed Protocol',
+      cycles: int.tryParse(_cyclesController.text) ?? 30,
+      initialDenaturation: PcrStep(
+        name: 'Initial Denaturation',
+        temperature: double.tryParse(_initialDenTempController.text) ?? 95.0,
+        duration: int.tryParse(_initialDenTimeController.text) ?? 300,
+        isEnabled: _initialDenaturationEnabled,
+      ),
+      denaturation: PcrStep(
+        name: 'Denaturation',
+        temperature: double.tryParse(_denTempController.text) ?? 95.0,
+        duration: int.tryParse(_denTimeController.text) ?? 30,
+      ),
+      annealing: PcrStep(
+        name: 'Annealing',
+        temperature: double.tryParse(_annTempController.text) ?? 55.0,
+        duration: int.tryParse(_annTimeController.text) ?? 30,
+      ),
+      extension: PcrStep(
+        name: 'Extension',
+        temperature: double.tryParse(_extTempController.text) ?? 72.0,
+        duration: int.tryParse(_extTimeController.text) ?? 60,
+      ),
+      finalExtension: PcrStep(
+        name: 'Final Extension',
+        temperature: double.tryParse(_finalExtTempController.text) ?? 72.0,
+        duration: int.tryParse(_finalExtTimeController.text) ?? 600,
+        isEnabled: _finalExtensionEnabled,
+      ),
+    );
+  }
+  
+  String _formatTime(int seconds) {
+    if (seconds < 60) {
+      return '${seconds}s';
+    } else if (seconds < 3600) {
+      int minutes = seconds ~/ 60;
+      int remainingSeconds = seconds % 60;
+      if (remainingSeconds == 0) {
+        return '${minutes}m';
+      } else {
+        return '${minutes}m ${remainingSeconds}s';
+      }
+    } else {
+      int hours = seconds ~/ 3600;
+      int remainingMinutes = (seconds % 3600) ~/ 60;
+      if (remainingMinutes == 0) {
+        return '${hours}h';
+      } else {
+        return '${hours}h ${remainingMinutes}m';
+      }
+    }
+  }
+  
+  void _copyProtocol() {
+    final protocol = _getCurrentProtocol();
+    final StringBuffer buffer = StringBuffer();
+    
+    buffer.writeln('Lab Studio - PCR Protocol');
+    buffer.writeln('Protocol Name: ${protocol.name}');
+    buffer.writeln('Date: ${_getTodayDate()}');
+    buffer.writeln('');
+    buffer.writeln('PCR Cycles: ${protocol.cycles}');
+    buffer.writeln('Estimated Total Time: ${protocol.getTotalTime().toStringAsFixed(1)} minutes');
+    buffer.writeln('');
+    buffer.writeln('Protocol Steps:');
+    
+    if (protocol.initialDenaturation.isEnabled) {
+      buffer.writeln('1. Initial Denaturation: ${protocol.initialDenaturation.temperature}°C for ${_formatTime(protocol.initialDenaturation.duration)}');
+    }
+    
+    buffer.writeln('2. Cyclic Steps (${protocol.cycles} cycles):');
+    buffer.writeln('   - Denaturation: ${protocol.denaturation.temperature}°C for ${_formatTime(protocol.denaturation.duration)}');
+    buffer.writeln('   - Annealing: ${protocol.annealing.temperature}°C for ${_formatTime(protocol.annealing.duration)}');
+    buffer.writeln('   - Extension: ${protocol.extension.temperature}°C for ${_formatTime(protocol.extension.duration)}');
+    
+    if (protocol.finalExtension.isEnabled) {
+      buffer.writeln('3. Final Extension: ${protocol.finalExtension.temperature}°C for ${_formatTime(protocol.finalExtension.duration)}');
+    }
+    
+    Clipboard.setData(ClipboardData(text: buffer.toString()));
+  }
+  
+  String _getTodayDate() {
+    final now = DateTime.now();
+    return '${now.month.toString().padLeft(2, '0')}/${now.day.toString().padLeft(2, '0')}/${(now.year % 100).toString().padLeft(2, '0')}';
+  }
+  
+  Widget _buildStepCard({
+    required String title,
+    required String subtitle,
+    required TextEditingController tempController,
+    required TextEditingController timeController,
+    bool? isEnabled,
+    VoidCallback? onToggle,
+    IconData? icon,
+  }) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 4.0),
+      decoration: BoxDecoration(
+        color: widget.isDarkMode 
+            ? CupertinoColors.systemGrey6.darkColor
+            : CupertinoColors.systemBackground,
+        borderRadius: BorderRadius.circular(12.0),
+        border: Border.all(
+          color: CupertinoColors.separator,
+          width: 0.5,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 標題行
+          Container(
+            padding: const EdgeInsets.fromLTRB(16.0, 12.0, 16.0, 8.0),
+            child: Row(
+              children: [
+                if (icon != null) ...[
+                  Icon(
+                    icon,
+                    color: (isEnabled ?? true) 
+                        ? CupertinoColors.systemBlue 
+                        : CupertinoColors.systemGrey,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                ],
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: (isEnabled ?? true)
+                              ? (widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black)
+                              : CupertinoColors.systemGrey,
+                        ),
+                      ),
+                      if (subtitle.isNotEmpty)
+                        Text(
+                          subtitle,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: CupertinoColors.secondaryLabel,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                if (onToggle != null)
+                  Transform.scale(
+                    scale: 0.8,
+                    child: CupertinoSwitch(
+                      value: isEnabled ?? true,
+                      onChanged: (value) => onToggle(),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          // 參數設定行
+          if (isEnabled ?? true)
+            Container(
+              padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 16.0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Temperature (°C)',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: CupertinoColors.secondaryLabel,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        CupertinoTextField(
+                          controller: tempController,
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [BankStyleDecimalFormatter(decimalPlaces: 1, maxDigits: 4)],
+                          style: TextStyle(color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
+                          decoration: BoxDecoration(
+                            color: widget.isDarkMode 
+                                ? CupertinoColors.systemGrey5.darkColor
+                                : CupertinoColors.tertiarySystemBackground,
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Time (seconds)',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: CupertinoColors.secondaryLabel,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        CupertinoTextField(
+                          controller: timeController,
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [BankStyleIntegerFormatter(maxDigits: 5)],
+                          style: TextStyle(color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
+                          decoration: BoxDecoration(
+                            color: widget.isDarkMode 
+                                ? CupertinoColors.systemGrey5.darkColor
+                                : CupertinoColors.tertiarySystemBackground,
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+  
+  @override
+  Widget build(BuildContext context) {
+    final protocol = _getCurrentProtocol();
+    
+    return CupertinoPageScaffold(
+      navigationBar: CupertinoNavigationBar(
+        middle: Text(
+          'PCR Reaction',
+          style: TextStyle(color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
+        ),
+        trailing: CupertinoButton(
+          padding: EdgeInsets.zero,
+          onPressed: () {
+            // 這裡可以添加設定頁面
+          },
+          child: Icon(
+            CupertinoIcons.settings,
+            size: 24,
+            color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
+          ),
+        ),
+      ),
+      child: GestureDetector(
+        onTap: () {
+          FocusScope.of(context).unfocus();
+        },
+        child: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.all(16.0),
+            children: [
+              // 協議名稱和總覽
+              Container(
+                decoration: BoxDecoration(
+                  color: widget.isDarkMode 
+                      ? CupertinoColors.systemGrey6.darkColor
+                      : CupertinoColors.systemBackground,
+                  borderRadius: BorderRadius.circular(12.0),
+                ),
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Protocol Configuration',
+                      style: CupertinoTheme.of(context).textTheme.navLargeTitleTextStyle.copyWith(
+                        fontSize: 20,
+                        color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    CupertinoTextField(
+                      controller: _protocolNameController,
+                      placeholder: 'Protocol Name',
+                      style: TextStyle(color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
+                      placeholderStyle: TextStyle(color: CupertinoColors.placeholderText),
+                      decoration: BoxDecoration(
+                        color: widget.isDarkMode 
+                            ? CupertinoColors.systemGrey5.darkColor
+                            : CupertinoColors.tertiarySystemBackground,
+                        borderRadius: BorderRadius.circular(8.0),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 12.0),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'PCR Cycles',
+                                style: TextStyle(
+                                  color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              CupertinoTextField(
+                                controller: _cyclesController,
+                                keyboardType: TextInputType.number,
+                                inputFormatters: [BankStyleIntegerFormatter(maxDigits: 2)],
+                                style: TextStyle(color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
+                                decoration: BoxDecoration(
+                                  color: widget.isDarkMode 
+                                      ? CupertinoColors.systemGrey5.darkColor
+                                      : CupertinoColors.tertiarySystemBackground,
+                                  borderRadius: BorderRadius.circular(8.0),
+                                ),
+                                padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 12.0),
+                                onChanged: (value) => setState(() {}),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Total Time',
+                                style: TextStyle(
+                                  color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 12.0),
+                                decoration: BoxDecoration(
+                                  color: widget.isDarkMode 
+                                      ? CupertinoColors.systemGrey6.darkColor
+                                      : CupertinoColors.systemGrey6,
+                                  borderRadius: BorderRadius.circular(8.0),
+                                ),
+                                child: Text(
+                                  '${protocol.getTotalTime().toStringAsFixed(1)} min',
+                                  style: TextStyle(
+                                    color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: CupertinoButton.filled(
+                            onPressed: () {
+                              // 清除所有輸入
+                            },
+                            child: Text(
+                              'Clear',
+                              style: TextStyle(color: CupertinoColors.white),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: CupertinoButton.filled(
+                            onPressed: _copyProtocol,
+                            child: Text(
+                              'Copy',
+                              style: TextStyle(color: CupertinoColors.white),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              
+              // PCR 步驟設定
+              Text(
+                'PCR Steps',
+                style: CupertinoTheme.of(context).textTheme.navLargeTitleTextStyle.copyWith(
+                  fontSize: 18,
+                  color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
+                ),
+              ),
+              const SizedBox(height: 8),
+              
+              // 初始變性
+              _buildStepCard(
+                title: 'Initial Denaturation',
+                subtitle: 'One-time step at the beginning',
+                tempController: _initialDenTempController,
+                timeController: _initialDenTimeController,
+                isEnabled: _initialDenaturationEnabled,
+                onToggle: () {
+                  setState(() {
+                    _initialDenaturationEnabled = !_initialDenaturationEnabled;
+                  });
+                },
+                icon: CupertinoIcons.flame,
+              ),
+              
+              // 循環步驟標題
+              Container(
+                margin: const EdgeInsets.fromLTRB(0, 16, 0, 8),
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                decoration: BoxDecoration(
+                  color: CupertinoColors.systemBlue.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      CupertinoIcons.repeat,
+                      color: CupertinoColors.systemBlue,
+                      size: 18,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Cyclic Steps (${protocol.cycles} cycles)',
+                      style: TextStyle(
+                        color: CupertinoColors.systemBlue,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              
+              // 變性
+              _buildStepCard(
+                title: 'Denaturation',
+                subtitle: 'Separate DNA strands',
+                tempController: _denTempController,
+                timeController: _denTimeController,
+                icon: CupertinoIcons.flame_fill,
+              ),
+              
+              // 退火
+              _buildStepCard(
+                title: 'Annealing',
+                subtitle: 'Primer binding',
+                tempController: _annTempController,
+                timeController: _annTimeController,
+                icon: CupertinoIcons.link,
+              ),
+              
+              // 延伸
+              _buildStepCard(
+                title: 'Extension',
+                subtitle: 'DNA synthesis',
+                tempController: _extTempController,
+                timeController: _extTimeController,
+                icon: CupertinoIcons.arrow_right_circle_fill,
+              ),
+              
+              // 最終延伸
+              _buildStepCard(
+                title: 'Final Extension',
+                subtitle: 'Complete incomplete products',
+                tempController: _finalExtTempController,
+                timeController: _finalExtTimeController,
+                isEnabled: _finalExtensionEnabled,
+                onToggle: () {
+                  setState(() {
+                    _finalExtensionEnabled = !_finalExtensionEnabled;
+                  });
+                },
+                icon: CupertinoIcons.checkmark_circle_fill,
+              ),
+              
+              const SizedBox(height: 32),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -1896,14 +2597,14 @@ class _ConfigurationSelectorState extends State<ConfigurationSelector> {
               ],
             ),
           ),
-          // 垂直轉盤列表
+          // 配置列表
           Expanded(
             child: configs.isEmpty
                 ? Center(
                     child: Text(
-                      'No configurations available',
+                      'No saved configurations',
                       style: TextStyle(
-                        color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.secondaryLabel,
+                        color: CupertinoColors.secondaryLabel,
                         fontSize: 16,
                       ),
                     ),
@@ -1914,100 +2615,41 @@ class _ConfigurationSelectorState extends State<ConfigurationSelector> {
                     itemBuilder: (context, index) {
                       final config = configs[index];
                       return Container(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              CupertinoColors.systemBlue.withOpacity(0.1),
-                              CupertinoColors.systemPurple.withOpacity(0.1),
-                            ],
-                          ),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: CupertinoColors.separator,
-                            width: 0.5,
-                          ),
-                        ),
-                        child: CupertinoButton(
-                          padding: EdgeInsets.zero,
-                          onPressed: () {
-                            widget.onConfigurationSelected(config);
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.all(20),
-                            child: Row(
-                              children: [
-                                // 配置圖標
-                                Container(
-                                  width: 48,
-                                  height: 48,
-                                  decoration: BoxDecoration(
-                                    gradient: const LinearGradient(
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                      colors: [
-                                        CupertinoColors.systemBlue,
-                                        CupertinoColors.systemPurple,
-                                      ],
-                                    ),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: const Icon(
-                                    CupertinoIcons.lab_flask,
-                                    color: CupertinoColors.white,
-                                    size: 24,
-                                  ),
-                                ),
-                                const SizedBox(width: 16),
-                                // 配置資訊
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        config.name,
-                                        style: TextStyle(
-                                          fontSize: 17,
-                                          fontWeight: FontWeight.w600,
-                                          color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        '${config.numReactions} reactions • ${config.reactionVolume.toStringAsFixed(1)} µl',
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.secondaryLabel,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                // 刪除按鈕
-                                CupertinoButton(
-                                  padding: const EdgeInsets.all(8),
-                                  onPressed: () {
-                                    _handleDeleteConfiguration(config);
-                                  },
-                                  child: Container(
-                                    width: 32,
-                                    height: 32,
-                                    decoration: BoxDecoration(
-                                      color: CupertinoColors.destructiveRed.withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: const Icon(
-                                      CupertinoIcons.delete,
-                                      color: CupertinoColors.destructiveRed,
-                                      size: 18,
-                                    ),
-                                  ),
-                                ),
-                              ],
+                        margin: const EdgeInsets.only(bottom: 8),
+                        child: CupertinoListTile(
+                          title: Text(
+                            config.name,
+                            style: TextStyle(
+                              color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
                             ),
                           ),
+                          subtitle: Text(
+                            '${config.numReactions} reactions, ${config.reactionVolume}µl',
+                            style: TextStyle(
+                              color: CupertinoColors.secondaryLabel,
+                            ),
+                          ),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              CupertinoButton(
+                                padding: EdgeInsets.zero,
+                                onPressed: () => _handleDeleteConfiguration(config),
+                                child: Icon(
+                                  CupertinoIcons.delete,
+                                  color: CupertinoColors.destructiveRed,
+                                  size: 20,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Icon(
+                                CupertinoIcons.forward,
+                                color: CupertinoColors.systemGrey,
+                                size: 16,
+                              ),
+                            ],
+                          ),
+                          onTap: () => widget.onConfigurationSelected(config),
                         ),
                       );
                     },
@@ -2059,7 +2701,7 @@ class SettingsPage extends StatelessWidget {
               borderRadius: BorderRadius.circular(2.5),
             ),
           ),
-          // 標題和關閉按鈕
+          // 標題
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
             child: Row(
@@ -2084,408 +2726,71 @@ class SettingsPage extends StatelessWidget {
               ],
             ),
           ),
-          // 設定項目
+          // 設定選項
           Expanded(
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               children: [
-                // 主題設定卡片
-                Container(
-                  decoration: BoxDecoration(
-                    color: isDarkMode 
-                        ? CupertinoColors.systemGrey5.darkColor
-                        : CupertinoColors.tertiarySystemBackground,
-                    borderRadius: BorderRadius.circular(12),
+                // 深色模式
+                CupertinoListTile(
+                  title: Text(
+                    'Dark Mode',
+                    style: TextStyle(
+                      color: isDarkMode ? CupertinoColors.white : CupertinoColors.black,
+                    ),
                   ),
-                  child: Column(
-                    children: [
-                      // 主題切換項目
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        child: Row(
-                          children: [
-                            // 圖示
-                            Container(
-                              width: 32,
-                              height: 32,
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                  colors: [
-                                    CupertinoColors.systemOrange,
-                                    CupertinoColors.systemYellow,
-                                  ],
-                                ),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Icon(
-                                isDarkMode 
-                                    ? CupertinoIcons.moon_fill 
-                                    : CupertinoIcons.sun_max_fill,
-                                color: CupertinoColors.white,
-                                size: 18,
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            // 標題和描述
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Appearance',
-                                    style: TextStyle(
-                                      fontSize: 17,
-                                      fontWeight: FontWeight.w600,
-                                      color: isDarkMode ? CupertinoColors.white : CupertinoColors.black,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    isDarkMode ? 'Dark Mode' : 'Light Mode',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: isDarkMode ? CupertinoColors.white : CupertinoColors.secondaryLabel,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            // 切換開關
-                            CupertinoSwitch(
-                              value: isDarkMode,
-                              onChanged: (value) {
-                                onToggleTheme();
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+                  trailing: CupertinoSwitch(
+                    value: isDarkMode,
+                    onChanged: (value) => onToggleTheme(),
                   ),
                 ),
-                const SizedBox(height: 16),
-                // 實驗追蹤模式設定卡片
-                Container(
-                  decoration: BoxDecoration(
-                    color: isDarkMode 
-                        ? CupertinoColors.systemGrey5.darkColor
-                        : CupertinoColors.tertiarySystemBackground,
-                    borderRadius: BorderRadius.circular(12),
+                
+                const SizedBox(height: 20),
+                
+                // 實驗追蹤模式
+                CupertinoListTile(
+                  title: Text(
+                    'Experiment Tracking',
+                    style: TextStyle(
+                      color: isDarkMode ? CupertinoColors.white : CupertinoColors.black,
+                    ),
                   ),
-                  child: Column(
-                    children: [
-                      // 實驗追蹤模式切換項目
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        child: Row(
-                          children: [
-                            // 圖示
-                            Container(
-                              width: 32,
-                              height: 32,
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                  colors: [
-                                    CupertinoColors.systemGreen,
-                                    CupertinoColors.systemTeal,
-                                  ],
-                                ),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Icon(
-                                isExperimentTrackingMode 
-                                    ? CupertinoIcons.checkmark_square_fill 
-                                    : CupertinoIcons.square,
-                                color: CupertinoColors.white,
-                                size: 18,
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            // 標題和描述
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Experiment Tracking',
-                                    style: TextStyle(
-                                      fontSize: 17,
-                                      fontWeight: FontWeight.w600,
-                                      color: isDarkMode ? CupertinoColors.white : CupertinoColors.black,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    isExperimentTrackingMode ? 'Track reagent addition' : 'Disabled',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: isDarkMode ? CupertinoColors.white : CupertinoColors.secondaryLabel,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            // 切換開關
-                            CupertinoSwitch(
-                              value: isExperimentTrackingMode,
-                              onChanged: (value) {
-                                onToggleExperimentTracking();
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                      // 追蹤顯示模式選擇項目（只在實驗追蹤模式開啟時顯示）
-                      if (isExperimentTrackingMode) ...[
-                        Container(
-                          height: 1,
-                          color: isDarkMode 
-                              ? CupertinoColors.systemGrey4.darkColor
-                              : CupertinoColors.separator,
-                        ),
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          child: Row(
-                            children: [
-                              // 圖示
-                              Container(
-                                width: 32,
-                                height: 32,
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                    colors: [
-                                      CupertinoColors.systemPurple,
-                                      CupertinoColors.systemPink,
-                                    ],
-                                  ),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Icon(
-                                  trackingDisplayMode == 0 
-                                      ? CupertinoIcons.checkmark_square 
-                                      : CupertinoIcons.strikethrough,
-                                  color: CupertinoColors.white,
-                                  size: 18,
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              // 標題和描述
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Display Style',
-                                      style: TextStyle(
-                                        fontSize: 17,
-                                        fontWeight: FontWeight.w600,
-                                        color: isDarkMode ? CupertinoColors.white : CupertinoColors.black,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      trackingDisplayMode == 0 ? 'Checkbox' : 'Strikethrough',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: isDarkMode ? CupertinoColors.white : CupertinoColors.secondaryLabel,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              // 選擇按鈕
-                              CupertinoButton(
-                                padding: EdgeInsets.zero,
-                                onPressed: () {
-                                  showCupertinoModalPopup(
-                                    context: context,
-                                    builder: (BuildContext context) {
-                                      return Container(
-                                        height: 200,
-                                        color: isDarkMode 
-                                            ? CupertinoColors.systemGrey6.darkColor
-                                            : CupertinoColors.systemBackground,
-                                        child: Column(
-                                          children: [
-                                            // 頂部工具欄
-                                            Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                              child: Row(
-                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                children: [
-                                                  CupertinoButton(
-                                                    padding: EdgeInsets.zero,
-                                                    onPressed: () => Navigator.of(context).pop(),
-                                                    child: Text(
-                                                      'Cancel',
-                                                      style: TextStyle(color: CupertinoColors.systemBlue),
-                                                    ),
-                                                  ),
-                                                  Text(
-                                                    'Display Style',
-                                                    style: TextStyle(
-                                                      fontSize: 17,
-                                                      fontWeight: FontWeight.w600,
-                                                      color: isDarkMode ? CupertinoColors.white : CupertinoColors.black,
-                                                    ),
-                                                  ),
-                                                  CupertinoButton(
-                                                    padding: EdgeInsets.zero,
-                                                    onPressed: () => Navigator.of(context).pop(),
-                                                    child: Text(
-                                                      'Done',
-                                                      style: TextStyle(color: CupertinoColors.systemBlue),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                            // 選擇器
-                                            Expanded(
-                                              child: CupertinoPicker(
-                                                scrollController: FixedExtentScrollController(
-                                                  initialItem: trackingDisplayMode,
-                                                ),
-                                                itemExtent: 40,
-                                                onSelectedItemChanged: (int index) {
-                                                  onSetTrackingDisplayMode(index);
-                                                },
-                                                children: [
-                                                  Center(
-                                                    child: Row(
-                                                      mainAxisAlignment: MainAxisAlignment.center,
-                                                      children: [
-                                                        Icon(
-                                                          CupertinoIcons.checkmark_square,
-                                                          size: 16,
-                                                          color: isDarkMode ? CupertinoColors.white : CupertinoColors.black,
-                                                        ),
-                                                        const SizedBox(width: 8),
-                                                        Text(
-                                                          'Checkbox',
-                                                          style: TextStyle(
-                                                            fontSize: 16,
-                                                            color: isDarkMode ? CupertinoColors.white : CupertinoColors.black,
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                  Center(
-                                                    child: Row(
-                                                      mainAxisAlignment: MainAxisAlignment.center,
-                                                      children: [
-                                                        Icon(
-                                                          CupertinoIcons.strikethrough,
-                                                          size: 16,
-                                                          color: isDarkMode ? CupertinoColors.white : CupertinoColors.black,
-                                                        ),
-                                                        const SizedBox(width: 8),
-                                                        Text(
-                                                          'Strikethrough',
-                                                          style: TextStyle(
-                                                            fontSize: 16,
-                                                            color: isDarkMode ? CupertinoColors.white : CupertinoColors.black,
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      );
-                                    },
-                                  );
-                                },
-                                child: Text(
-                                  'Change',
-                                  style: TextStyle(color: CupertinoColors.systemBlue),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ],
+                  subtitle: Text(
+                    'Track which reagents have been added',
+                    style: TextStyle(
+                      color: CupertinoColors.secondaryLabel,
+                    ),
+                  ),
+                  trailing: CupertinoSwitch(
+                    value: isExperimentTrackingMode,
+                    onChanged: (value) => onToggleExperimentTracking(),
                   ),
                 ),
-                const SizedBox(height: 16),
-                // 應用程式資訊卡片
-                Container(
-                  decoration: BoxDecoration(
-                    color: isDarkMode 
-                        ? CupertinoColors.systemGrey5.darkColor
-                        : CupertinoColors.tertiarySystemBackground,
-                    borderRadius: BorderRadius.circular(12),
+                
+                if (isExperimentTrackingMode) ...[
+                  const SizedBox(height: 16),
+                  Text(
+                    'Tracking Display Mode',
+                    style: TextStyle(
+                      color: isDarkMode ? CupertinoColors.white : CupertinoColors.black,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
-                  child: Column(
-                    children: [
-                      // 版本資訊
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        child: Row(
-                          children: [
-                            // 圖示
-                            Container(
-                              width: 32,
-                              height: 32,
-                              decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                  colors: [
-                                    CupertinoColors.systemBlue,
-                                    CupertinoColors.systemPurple,
-                                  ],
-                                ),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Icon(
-                                CupertinoIcons.lab_flask_solid,
-                                color: CupertinoColors.white,
-                                size: 18,
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            // 標題和描述
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Lab Studio',
-                                    style: TextStyle(
-                                      fontSize: 17,
-                                      fontWeight: FontWeight.w600,
-                                      color: isDarkMode ? CupertinoColors.white : CupertinoColors.black,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    'Version 1.0.0',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: isDarkMode ? CupertinoColors.white : CupertinoColors.secondaryLabel,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+                  const SizedBox(height: 8),
+                  CupertinoSlidingSegmentedControl<int>(
+                    groupValue: trackingDisplayMode,
+                    children: const {
+                      0: Text('Checkbox'),
+                      1: Text('Strikethrough'),
+                    },
+                    onValueChanged: (int? value) {
+                      if (value != null) {
+                        onSetTrackingDisplayMode(value);
+                      }
+                    },
                   ),
-                ),
+                ],
               ],
             ),
           ),

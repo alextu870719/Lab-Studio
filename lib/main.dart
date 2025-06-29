@@ -3216,17 +3216,6 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
                                 size: 20,
                               ),
                             ),
-                            const SizedBox(width: 8),
-                            // 刪除 Stage 按鈕
-                            CupertinoButton(
-                              padding: EdgeInsets.zero,
-                              onPressed: () => _deleteStage(stageIndex),
-                              child: const Icon(
-                                CupertinoIcons.delete,
-                                color: CupertinoColors.destructiveRed,
-                                size: 20,
-                              ),
-                            ),
                           ],
                           // 啟用/停用開關
                           Transform.scale(
@@ -3448,19 +3437,7 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
               ],
             ),
           ),
-          // 控制按鈕
-          if (_isEditMode) ...[
-            const SizedBox(width: 8),
-            CupertinoButton(
-              padding: EdgeInsets.zero,
-              onPressed: () => _deleteStep(stageIndex, stepIndex),
-              child: const Icon(
-                CupertinoIcons.delete,
-                color: CupertinoColors.destructiveRed,
-                size: 16,
-              ),
-            ),
-          ],
+          // 控制按鈕（已移除刪除按鈕，僅保留左滑刪除）
           // 啟用/停用開關
           Transform.scale(
             scale: 0.7,

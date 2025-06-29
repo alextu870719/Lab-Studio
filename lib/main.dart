@@ -1077,9 +1077,8 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
   Widget _buildDraggableReagentItem(Reagent reagent, int originalIndex, int listIndex) {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 4.0),
-      child: LongPressDraggable<int>(
+      child: Draggable<int>(
         data: listIndex,
-        delay: const Duration(milliseconds: 300),
         feedback: Material(
           color: Colors.transparent,
           child: Container(

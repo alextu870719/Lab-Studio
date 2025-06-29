@@ -1918,13 +1918,13 @@ class EditablePcrStep {
     this.isEnabled = true,
   }) : id = id ?? DateTime.now().millisecondsSinceEpoch.toString() + name.hashCode.toString(),
        tempController = TextEditingController(text: temperature.toStringAsFixed(1)),
-       timeController = TextEditingController(text: duration.toString());
+       timeController = TextEditingController(text: TimeInputFormatter.formatSecondsToTime(duration));
   
   // 獲取溫度值
   double get temperature => double.tryParse(tempController.text) ?? 0.0;
   
   // 獲取時間值
-  int get duration => int.tryParse(timeController.text) ?? 0;
+  int get duration => TimeInputFormatter.parseTimeToSeconds(timeController.text);
   
   // 獲取 PcrStep 對象
   PcrStep toPcrStep() {
@@ -2200,7 +2200,7 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
           subtitle: 'Hold temperature',
           icon: CupertinoIcons.pause_circle,
           temperature: 4.0,
-          duration: 999999, // Infinite hold
+          duration: 0, // Infinite hold - 顯示為 ∞
         ),
       ],
     ));
@@ -2292,30 +2292,8 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
   
   // 格式化時間
   String _formatTime(int seconds) {
-    // 當時間為 0 時顯示為無限符號
-    if (seconds == 0) {
-      return '∞';
-    }
-    
-    if (seconds < 60) {
-      return '${seconds}s';
-    } else if (seconds < 3600) {
-      int minutes = seconds ~/ 60;
-      int remainingSeconds = seconds % 60;
-      if (remainingSeconds == 0) {
-        return '${minutes}m';
-      } else {
-        return '${minutes}m ${remainingSeconds}s';
-      }
-    } else {
-      int hours = seconds ~/ 3600;
-      int remainingMinutes = (seconds % 3600) ~/ 60;
-      if (remainingMinutes == 0) {
-        return '${hours}h';
-      } else {
-        return '${hours}h ${remainingMinutes}m';
-      }
-    }
+    // 使用新的 mm:ss 格式
+    return TimeInputFormatter.formatSecondsToTime(seconds);
   }
   
   // 複製協議
@@ -2432,7 +2410,7 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
             subtitle: 'Hold temperature',
             icon: CupertinoIcons.pause_circle,
             temperature: 4.0,
-            duration: 999999,
+            duration: 0, // Infinite hold - 顯示為 ∞
           ),
         ],
       ));
@@ -2743,7 +2721,7 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
                       Flexible(
                         flex: 1,
                         child: Container(
-                          constraints: const BoxConstraints(maxWidth: 80),
+                          constraints: const BoxConstraints(maxWidth: 90),
                           child: CupertinoTextField(
                             controller: step.timeController,
                             keyboardType: TextInputType.number,
@@ -2751,6 +2729,7 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
                             onEditingComplete: () {
                               FocusScope.of(context).unfocus();
                             },
+                            inputFormatters: [TimeInputFormatter()],
                             style: TextStyle(
                               fontSize: 12,
                               color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
@@ -2762,23 +2741,13 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
                               borderRadius: BorderRadius.circular(4.0),
                             ),
                             padding: const EdgeInsets.symmetric(vertical: 2.0, horizontal: 6.0),
-                            suffix: Text(
-                              // 當輸入為 0 或空時顯示 ∞，否則顯示 s
-                              (step.timeController.text == '0' || step.timeController.text == '00' || step.timeController.text.isEmpty) 
-                                  ? '∞' 
-                                  : 's', 
-                              style: TextStyle(
-                                fontSize: 10, 
-                                color: widget.isDarkMode ? CupertinoColors.systemGrey2 : CupertinoColors.secondaryLabel
-                              ),
-                            ),
                             onChanged: (value) => setState(() {}),
                           ),
                         ),
                       )
                     else
                       Text(
-                        _formatTime(int.tryParse(step.timeController.text) ?? 0),
+                        _formatTime(TimeInputFormatter.parseTimeToSeconds(step.timeController.text)),
                         style: TextStyle(
                           fontSize: 12,
                           color: widget.isDarkMode ? CupertinoColors.systemGrey2 : CupertinoColors.secondaryLabel,

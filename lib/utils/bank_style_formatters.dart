@@ -190,3 +190,119 @@ class BankStyleIntegerFormatter extends TextInputFormatter {
     );
   }
 }
+
+/// 時間格式化器，支持 hh:mm:ss 格式的銀行式輸入
+/// 時間以秒為單位存儲，但顯示為 hh:mm:ss 格式
+class TimeInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    String newText = newValue.text;
+    
+    // 只允許數字和冒號
+    newText = newText.replaceAll(RegExp(r'[^0-9:]'), '');
+    
+    // 如果輸入 '00' 或 '0:00:00' 或 '00:00:00'，顯示為 ∞
+    if (newText == '00' || newText == '0:00:00' || newText == '00:00:00') {
+      return TextEditingValue(
+        text: '∞',
+        selection: TextSelection.collapsed(offset: 1),
+      );
+    }
+    
+    // 處理 ∞ 符號
+    if (newText.contains('∞')) {
+      return TextEditingValue(
+        text: '∞',
+        selection: TextSelection.collapsed(offset: 1),
+      );
+    }
+    
+    // 處理數字輸入，自動格式化為 hh:mm:ss
+    if (newText.isNotEmpty) {
+      // 移除所有冒號
+      String digitsOnly = newText.replaceAll(':', '');
+      
+      if (digitsOnly.length > 6) {
+        digitsOnly = digitsOnly.substring(0, 6); // 限制為 6 位數字 (hhmmss)
+      }
+      
+      if (digitsOnly.isEmpty) {
+        return TextEditingValue(
+          text: '0:00:00',
+          selection: TextSelection.collapsed(offset: 7),
+        );
+      }
+      
+      // 根據長度自動添加冒號，從右邊開始填充
+      digitsOnly = digitsOnly.padLeft(6, '0');
+      
+      String hours = digitsOnly.substring(0, 2);
+      String minutes = digitsOnly.substring(2, 4);
+      String seconds = digitsOnly.substring(4, 6);
+      
+      // 確保分鐘和秒數不超過 59
+      int min = int.tryParse(minutes) ?? 0;
+      int sec = int.tryParse(seconds) ?? 0;
+      if (min > 59) minutes = '59';
+      if (sec > 59) seconds = '59';
+      
+      // 移除小時前導零（除非小時為 0）
+      int hr = int.tryParse(hours) ?? 0;
+      String hoursFormatted = hr.toString();
+      
+      newText = '$hoursFormatted:$minutes:$seconds';
+    } else {
+      newText = '0:00:00';
+    }
+    
+    return TextEditingValue(
+      text: newText,
+      selection: TextSelection.collapsed(offset: newText.length),
+    );
+  }
+  
+  /// 將 hh:mm:ss 格式轉換為總秒數
+  static int parseTimeToSeconds(String timeText) {
+    if (timeText.isEmpty || timeText == '0:00:00') {
+      return 0;
+    }
+    
+    // 處理特殊情況：∞ 符號
+    if (timeText.contains('∞')) {
+      return 0;
+    }
+    
+    List<String> parts = timeText.split(':');
+    
+    if (parts.length == 3) {
+      // hh:mm:ss 格式
+      int hours = int.tryParse(parts[0]) ?? 0;
+      int minutes = int.tryParse(parts[1]) ?? 0;
+      int seconds = int.tryParse(parts[2]) ?? 0;
+      return hours * 3600 + minutes * 60 + seconds;
+    } else if (parts.length == 2) {
+      // 向後兼容 mm:ss 格式
+      int minutes = int.tryParse(parts[0]) ?? 0;
+      int seconds = int.tryParse(parts[1]) ?? 0;
+      return minutes * 60 + seconds;
+    }
+    
+    return 0;
+  }
+  
+  /// 將總秒數轉換為 hh:mm:ss 格式
+  static String formatSecondsToTime(int totalSeconds) {
+    if (totalSeconds == 0) {
+      return '∞';
+    }
+    
+    int hours = totalSeconds ~/ 3600;
+    int minutes = (totalSeconds % 3600) ~/ 60;
+    int seconds = totalSeconds % 60;
+    
+    return '$hours:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+  }
+}

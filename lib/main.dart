@@ -1904,6 +1904,7 @@ class EditablePcrStep {
   String name;
   final String subtitle;
   final IconData icon;
+  final TextEditingController nameController;
   final TextEditingController tempController;
   final TextEditingController timeController;
   bool isEnabled;
@@ -1917,6 +1918,7 @@ class EditablePcrStep {
     required int duration,
     this.isEnabled = true,
   }) : id = id ?? DateTime.now().millisecondsSinceEpoch.toString() + name.hashCode.toString(),
+       nameController = TextEditingController(text: name),
        tempController = TextEditingController(text: temperature.toStringAsFixed(1)),
        timeController = TextEditingController(text: TimeInputFormatter.formatSecondsToTime(duration));
   
@@ -1954,6 +1956,7 @@ class EditablePcrStep {
   }
   
   void dispose() {
+    nameController.dispose();
     tempController.dispose();
     timeController.dispose();
   }
@@ -1963,6 +1966,7 @@ class EditablePcrStep {
 class EditablePcrStage {
   final String id;
   String name;
+  final TextEditingController nameController;
   final TextEditingController cyclesController;
   List<EditablePcrStep> steps;
   bool isEnabled;
@@ -1974,6 +1978,7 @@ class EditablePcrStage {
     required this.steps,
     this.isEnabled = true,
   }) : id = id ?? DateTime.now().millisecondsSinceEpoch.toString() + name.hashCode.toString(),
+       nameController = TextEditingController(text: name),
        cyclesController = TextEditingController(text: cycles.toString());
   
   // 獲取循環次數
@@ -2006,6 +2011,7 @@ class EditablePcrStage {
   }
   
   void dispose() {
+    nameController.dispose();
     cyclesController.dispose();
     for (var step in steps) {
       step.dispose();
@@ -2468,7 +2474,7 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
                     children: [
                       if (_isEditMode)
                         CupertinoTextField(
-                          controller: TextEditingController(text: stage.name),
+                          controller: stage.nameController,
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w600,
@@ -2480,15 +2486,16 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
                                 : CupertinoColors.tertiarySystemBackground,
                             borderRadius: BorderRadius.circular(8.0),
                           ),
-                          onChanged: (value) {
-                            setState(() {
-                              stage.name = value;
-                            });
-                          },
+                          // 移除 onChanged 中的 setState，避免輸入時重建導致失焦
+                          // onChanged: (value) {
+                          //   setState(() {
+                          //     stage.name = value;
+                          //   });
+                          // },
                         )
                       else
                         Text(
-                          stage.name,
+                          stage.nameController.text,
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w600,
@@ -2528,7 +2535,8 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
                                   borderRadius: BorderRadius.circular(6.0),
                                 ),
                                 padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
-                                onChanged: (value) => setState(() {}),
+                                // 移除 onChanged 中的 setState，避免輸入時重建導致失焦
+                                // onChanged: (value) => setState(() {}),
                               ),
                             )
                           else
@@ -2643,7 +2651,7 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
               children: [
                 if (_isEditMode)
                   CupertinoTextField(
-                    controller: TextEditingController(text: step.name),
+                    controller: step.nameController,
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
@@ -2656,15 +2664,14 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
                       borderRadius: BorderRadius.circular(6.0),
                     ),
                     padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
-                    onChanged: (value) {
-                      setState(() {
-                        step.name = value;
-                      });
-                    },
+                    // 移除 onChanged 中的 setState，避免輸入時重建導致失焦
+                    // onChanged: (value) {
+                    //   step.name = value;
+                    // },
                   )
                 else
                   Text(
-                    step.name,
+                    step.nameController.text,
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
@@ -2703,7 +2710,8 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
                             ),
                             padding: const EdgeInsets.symmetric(vertical: 2.0, horizontal: 6.0),
                             suffix: Text('°C', style: TextStyle(fontSize: 10, color: widget.isDarkMode ? CupertinoColors.systemGrey2 : CupertinoColors.secondaryLabel)),
-                            onChanged: (value) => setState(() {}),
+                            // 移除 onChanged 中的 setState，避免輸入時重建導致失焦
+                            // onChanged: (value) => setState(() {}),
                           ),
                         ),
                       )
@@ -2750,7 +2758,8 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
                               borderRadius: BorderRadius.circular(4.0),
                             ),
                             padding: const EdgeInsets.symmetric(vertical: 2.0, horizontal: 6.0),
-                            onChanged: (value) => setState(() {}),
+                            // 移除 onChanged 中的 setState，避免輸入時重建導致失焦
+                            // onChanged: (value) => setState(() {}),
                           ),
                         ),
                       )

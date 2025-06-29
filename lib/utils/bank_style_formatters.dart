@@ -30,7 +30,7 @@ class BankStyleDecimalFormatter extends TextInputFormatter {
       String currentDigits = oldText.replaceAll(RegExp(r'[^\d]'), '');
       if (currentDigits.length > decimalPlaces + 1) {
         // 在最左邊加0，然後移除最右邊一位
-        currentDigits = '0' + currentDigits.substring(0, currentDigits.length - 1);
+        currentDigits = '0${currentDigits.substring(0, currentDigits.length - 1)}';
       } else {
         // 最小值
         currentDigits = List.filled(decimalPlaces + 1, '0').join();
@@ -82,7 +82,7 @@ class BankStyleDecimalFormatter extends TextInputFormatter {
   String _formatDigits(String digits) {
     // 確保至少有 decimalPlaces + 1 位數字
     while (digits.length < decimalPlaces + 1) {
-      digits = '0' + digits;
+      digits = '0$digits';
     }
     
     // 分割整數部分和小數部分

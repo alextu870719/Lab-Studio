@@ -146,7 +146,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
   final TextEditingController _customReactionVolumeController = TextEditingController(text: '25.0');
   final TextEditingController _templateDnaVolumeController = TextEditingController();
 
-  Map<String, double> _calculatedTotalVolumes = {};
+  final Map<String, double> _calculatedTotalVolumes = {};
   
   
   final Map<String, bool> _reagentInclusionStatus = {}; // New map to manage inclusion status

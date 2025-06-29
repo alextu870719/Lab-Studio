@@ -1056,6 +1056,243 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
     _calculateVolumes();
   }
 
+  // 拖拽排序相關方法
+  List<Widget> _buildDraggableReagentsList() {
+    // 過濾掉 Water 試劑，因為它不需要在編輯模式中顯示
+    List<Reagent> editableReagents = _reagents.where((r) => r.name != 'Water').toList();
+    
+    List<Widget> widgets = [];
+    for (int index = 0; index < editableReagents.length; index++) {
+      final reagent = editableReagents[index];
+      final originalIndex = _reagents.indexOf(reagent);
+      
+      widgets.add(
+        _buildDraggableReagentItem(reagent, originalIndex, index),
+      );
+    }
+    
+    return widgets;
+  }
+
+  Widget _buildDraggableReagentItem(Reagent reagent, int originalIndex, int listIndex) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 4.0),
+      child: LongPressDraggable<int>(
+        data: listIndex,
+        delay: const Duration(milliseconds: 300),
+        feedback: Material(
+          color: Colors.transparent,
+          child: Container(
+            width: MediaQuery.of(context).size.width - 32,
+            decoration: BoxDecoration(
+              color: widget.isDarkMode 
+                  ? CupertinoColors.systemGrey6.darkColor
+                  : CupertinoColors.systemBackground,
+              borderRadius: BorderRadius.circular(12.0),
+              border: Border.all(
+                color: CupertinoColors.systemBlue,
+                width: 2.0,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: CupertinoColors.systemBlue.withOpacity(0.4),
+                  blurRadius: 12,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                // 拖拽手柄
+                Container(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Icon(
+                    CupertinoIcons.bars,
+                    color: CupertinoColors.systemBlue,
+                    size: 20,
+                  ),
+                ),
+                // 試劑名稱
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.fromLTRB(0, 16.0, 16.0, 16.0),
+                    child: Text(
+                      reagent.name,
+                      style: TextStyle(
+                        color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        childWhenDragging: Container(
+          decoration: BoxDecoration(
+            color: widget.isDarkMode 
+                ? CupertinoColors.systemGrey5.darkColor
+                : CupertinoColors.systemGrey6,
+            borderRadius: BorderRadius.circular(12.0),
+            border: Border.all(
+              color: CupertinoColors.separator.withOpacity(0.5),
+              width: 1.0,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16.0),
+                child: Icon(
+                  CupertinoIcons.bars,
+                  color: CupertinoColors.secondaryLabel,
+                  size: 20,
+                ),
+              ),
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.fromLTRB(0, 16.0, 16.0, 16.0),
+                  child: Text(
+                    'Moving ${reagent.name}...',
+                    style: TextStyle(
+                      color: CupertinoColors.secondaryLabel,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        onDragStarted: () {
+          HapticFeedback.mediumImpact();
+        },
+        onDragEnd: (details) {
+          // 拖拽結束，可以在這裡處理
+        },
+        child: DragTarget<int>(
+          onWillAcceptWithDetails: (details) {
+            return details.data != listIndex;
+          },
+          onAcceptWithDetails: (details) {
+            if (details.data != listIndex) {
+              _onReorderReagents(details.data, listIndex);
+            }
+          },
+          builder: (context, candidateData, rejectedData) {
+            bool isHighlighted = candidateData.isNotEmpty;
+            
+            return AnimatedContainer(
+              duration: const Duration(milliseconds: 150),
+              decoration: BoxDecoration(
+                color: isHighlighted
+                    ? CupertinoColors.systemBlue.withOpacity(0.1)
+                    : (widget.isDarkMode 
+                        ? CupertinoColors.systemGrey6.darkColor
+                        : CupertinoColors.systemBackground),
+                borderRadius: BorderRadius.circular(12.0),
+                border: Border.all(
+                  color: isHighlighted 
+                      ? CupertinoColors.systemBlue
+                      : CupertinoColors.separator,
+                  width: isHighlighted ? 2.0 : 0.5,
+                ),
+              ),
+              child: Dismissible(
+                key: ValueKey(reagent.id),
+                direction: DismissDirection.endToStart,
+                dismissThresholds: const {
+                  DismissDirection.endToStart: 0.6,
+                },
+                confirmDismiss: (direction) async {
+                  return await _showDeleteConfirmation(reagent.name);
+                },
+                onDismissed: (direction) {
+                  _deleteReagent(originalIndex);
+                },
+                background: Container(
+                  decoration: BoxDecoration(
+                    color: CupertinoColors.destructiveRed,
+                    borderRadius: BorderRadius.circular(12.0),
+                  ),
+                  alignment: Alignment.centerRight,
+                  padding: const EdgeInsets.only(right: 20.0),
+                  child: const Icon(
+                    CupertinoIcons.delete,
+                    color: CupertinoColors.white,
+                    size: 24,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    // 拖拽手柄 - 使用 GestureDetector 提供更好的觸控反饋
+                    GestureDetector(
+                      onTap: () {
+                        HapticFeedback.lightImpact();
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Icon(
+                          CupertinoIcons.bars,
+                          color: widget.isDarkMode 
+                              ? CupertinoColors.white.withOpacity(0.7)
+                              : CupertinoColors.systemGrey,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                    // 試劑內容
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.fromLTRB(0, 16.0, 16.0, 16.0),
+                        child: _buildEditableReagentRow(reagent, originalIndex),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  void _onReorderReagents(int oldIndex, int newIndex) {
+    // 取得可編輯的試劑清單（不包含 Water）
+    List<Reagent> editableReagents = _reagents.where((r) => r.name != 'Water').toList();
+    
+    if (oldIndex >= 0 && oldIndex < editableReagents.length && 
+        newIndex >= 0 && newIndex < editableReagents.length &&
+        oldIndex != newIndex) {
+      
+      setState(() {
+        // 在可編輯清單中重新排序
+        final Reagent item = editableReagents.removeAt(oldIndex);
+        editableReagents.insert(newIndex, item);
+        
+        // 更新主要的試劑清單，保持 Water 在最後
+        List<Reagent> newReagents = List<Reagent>.from(editableReagents);
+        Reagent? waterReagent = _reagents.firstWhere((r) => r.name == 'Water');
+        newReagents.add(waterReagent);
+        
+        _reagents.clear();
+        _reagents.addAll(newReagents);
+        
+        // 重新初始化控制器以確保順序正確
+        _initializeEditControllers();
+        
+        // 重新計算體積
+        _calculateVolumes();
+      });
+      
+      // 提供觸覺反饋
+      HapticFeedback.lightImpact();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
@@ -1449,70 +1686,28 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                   ),
                 ),
               
-              for (var i = 0; i < _reagents.length; i++)
-                if ((_isEditMode && _reagents[i].name != 'Water') || (!_isEditMode && _calculatedTotalVolumes.containsKey(_reagents[i].name)))
-                  _isEditMode 
-                    ? Dismissible(
-                        key: ValueKey(_reagents[i].id),  // 使用唯一 ID 作為 key
-                        direction: DismissDirection.endToStart,
-                        dismissThresholds: const {
-                          DismissDirection.endToStart: 0.6, // Require 60% swipe to trigger
-                        },
-                        confirmDismiss: (direction) async {
-                          // 防止刪除 Water 試劑
-                          if (_reagents[i].name == 'Water') {
-                            return false;
-                          }
-                          return await _showDeleteConfirmation(_reagents[i].name);
-                        },
-                        onDismissed: (direction) {
-                          _deleteReagent(i);
-                        },
-                        background: Container(
-                          margin: const EdgeInsets.symmetric(vertical: 4.0),
-                          decoration: BoxDecoration(
-                            color: CupertinoColors.destructiveRed,
-                            borderRadius: BorderRadius.circular(12.0),
-                          ),
-                          alignment: Alignment.centerRight,
-                          padding: const EdgeInsets.only(right: 20.0),
-                          child: const Icon(
-                            CupertinoIcons.delete,
-                            color: CupertinoColors.white,
-                            size: 24,
-                          ),
+              // 編輯模式：支援拖拽排序的試劑清單
+              if (_isEditMode)
+                ..._buildDraggableReagentsList()
+              // 正常顯示模式
+              else
+                for (var i = 0; i < _reagents.length; i++)
+                  if (_calculatedTotalVolumes.containsKey(_reagents[i].name))
+                    Container(
+                      margin: const EdgeInsets.symmetric(vertical: 4.0),
+                      decoration: BoxDecoration(
+                        color: widget.isDarkMode 
+                            ? CupertinoColors.systemGrey6.darkColor
+                            : CupertinoColors.systemBackground,
+                        borderRadius: BorderRadius.circular(12.0),
+                        border: Border.all(
+                          color: CupertinoColors.separator,
+                          width: 0.5,
                         ),
-                        child: Container(
-                          margin: const EdgeInsets.symmetric(vertical: 4.0),
-                          decoration: BoxDecoration(
-                            color: widget.isDarkMode 
-                                ? CupertinoColors.systemGrey6.darkColor
-                                : CupertinoColors.systemBackground,
-                            borderRadius: BorderRadius.circular(12.0),
-                            border: Border.all(
-                              color: CupertinoColors.separator,
-                              width: 0.5,
-                            ),
-                          ),
-                          padding: const EdgeInsets.all(16.0),
-                          child: _buildEditableReagentRow(_reagents[i], i),
-                        ),
-                      )
-                    : Container(
-                        margin: const EdgeInsets.symmetric(vertical: 4.0),
-                        decoration: BoxDecoration(
-                          color: widget.isDarkMode 
-                              ? CupertinoColors.systemGrey6.darkColor
-                              : CupertinoColors.systemBackground,
-                          borderRadius: BorderRadius.circular(12.0),
-                          border: Border.all(
-                            color: CupertinoColors.separator,
-                            width: 0.5,
-                          ),
-                        ),
-                        padding: const EdgeInsets.all(16.0),
-                        child: _buildDisplayReagentRow(_reagents[i]),
                       ),
+                      padding: const EdgeInsets.all(16.0),
+                      child: _buildDisplayReagentRow(_reagents[i]),
+                    ),
               
               // Add new reagent button in edit mode
               if (_isEditMode)

@@ -2292,6 +2292,11 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
   
   // 格式化時間
   String _formatTime(int seconds) {
+    // 當時間為 0 時顯示為無限符號
+    if (seconds == 0) {
+      return '∞';
+    }
+    
     if (seconds < 60) {
       return '${seconds}s';
     } else if (seconds < 3600) {
@@ -2756,7 +2761,16 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
                               borderRadius: BorderRadius.circular(4.0),
                             ),
                             padding: const EdgeInsets.symmetric(vertical: 2.0, horizontal: 6.0),
-                            suffix: Text('s', style: TextStyle(fontSize: 10, color: widget.isDarkMode ? CupertinoColors.systemGrey2 : CupertinoColors.secondaryLabel)),
+                            suffix: Text(
+                              // 當輸入為 0 或空時顯示 ∞，否則顯示 s
+                              (step.timeController.text == '0' || step.timeController.text == '00' || step.timeController.text.isEmpty) 
+                                  ? '∞' 
+                                  : 's', 
+                              style: TextStyle(
+                                fontSize: 10, 
+                                color: widget.isDarkMode ? CupertinoColors.systemGrey2 : CupertinoColors.secondaryLabel
+                              ),
+                            ),
                             onChanged: (value) => setState(() {}),
                           ),
                         ),

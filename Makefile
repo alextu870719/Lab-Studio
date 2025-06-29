@@ -1,7 +1,7 @@
 # Lab Studio - Build Automation
 # Usage: make [target]
 
-.PHONY: all android ios macos web clean help install-deps release github-setup docker-windows
+.PHONY: all android ios macos web clean help install-deps release github-setup
 
 # Default target
 all: clean
@@ -12,11 +12,6 @@ all: clean
 release: all
 	@echo "Uploading to GitHub Releases..."
 	@./scripts/github_release.sh
-
-# Build Windows app using Docker
-docker-windows:
-	@echo "Building Windows app using Docker..."
-	@./scripts/build_windows_docker.sh
 
 # Quick Android build
 android:
@@ -78,7 +73,6 @@ help:
 	@echo "  make ios           - Build iOS IPA only (macOS only)"
 	@echo "  make macos         - Build macOS app only (macOS only)"
 	@echo "  make web           - Build Web app only"
-	@echo "  make docker-windows - Build Windows app using Docker"
 	@echo "  make clean         - Clean build files and get dependencies"
 	@echo "  make install-deps  - Install additional tools for better packaging"
 	@echo "  make github-setup  - Setup GitHub CLI and authentication"

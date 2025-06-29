@@ -34,12 +34,12 @@ Lab Studio 是一個專業的實驗室實驗設計和計算工具包，從 PCR �
 - [x] **iOS**: 構建 IPA (23 MB)
 - [x] **macOS**: 構建 DMG (20 MB)
 - [x] **Web**: 構建並打包為 ZIP (8 MB)
-- [x] **Linux**: 使用 Docker 跨平台構建 TAR.GZ (20 MB)
+- [x] **Linux**: 使用原生 Flutter 構建 TAR.GZ (20 MB)
 
-### ✅ Docker 跨平台支援
-- [x] 建立 Dockerfile.linux 用於 Linux 桌面構建
-- [x] 建立 Dockerfile.windows 用於 Windows 構建（實驗性）
-- [x] 成功使用 Docker 從 macOS 構建 Linux 版本
+### ✅ GitHub Actions CI/CD
+- [x] 建立 GitHub Actions workflow 自動構建 Windows 版本
+- [x] 支援手動觸發和 tag 觸發構建
+- [x] 自動上傳構建產物到 GitHub Releases
 
 ### ✅ GitHub Release 管理
 - [x] 建立 v1.0.0 Release
@@ -68,8 +68,8 @@ Lab Studio 是一個專業的實驗室實驗設計和計算工具包，從 PCR �
 - **UI**: Cupertino (iOS-style)
 - **Storage**: SharedPreferences
 - **Export**: PDF generation
-- **Multi-platform**: Android, iOS, macOS, Web, Linux
-- **Docker**: Ubuntu 22.04 based cross-platform builds
+- **Multi-platform**: Android, iOS, macOS, Web, Linux, Windows
+- **CI/CD**: GitHub Actions for automated builds
 
 ## 📈 Git 提交歷史
 ```

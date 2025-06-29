@@ -1150,60 +1150,102 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                   Row(
                     children: [
                       Expanded(
-                        child: CupertinoTextField(
-                          controller: _numReactionsController,
-                          placeholder: 'Number of Reactions',
-                          keyboardType: TextInputType.number,
-                          inputFormatters: [BankStyleIntegerFormatter(maxDigits: 3)],
-                          style: TextStyle(color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
-                          placeholderStyle: TextStyle(color: CupertinoColors.placeholderText),
-                          decoration: BoxDecoration(
-                            color: widget.isDarkMode 
-                                ? CupertinoColors.systemGrey5.darkColor
-                                : CupertinoColors.tertiarySystemBackground,
-                            borderRadius: BorderRadius.circular(8.0),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 12.0),
-                          onChanged: (value) => _calculateVolumes(),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Number of Reactions',
+                              style: TextStyle(
+                                color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            CupertinoTextField(
+                              controller: _numReactionsController,
+                              placeholder: '# RXN',
+                              keyboardType: TextInputType.number,
+                              inputFormatters: [BankStyleIntegerFormatter(maxDigits: 3)],
+                              style: TextStyle(color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
+                              placeholderStyle: TextStyle(color: CupertinoColors.placeholderText),
+                              decoration: BoxDecoration(
+                                color: widget.isDarkMode 
+                                    ? CupertinoColors.systemGrey5.darkColor
+                                    : CupertinoColors.tertiarySystemBackground,
+                                borderRadius: BorderRadius.circular(8.0),
+                              ),
+                              padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 12.0),
+                              onChanged: (value) => _calculateVolumes(),
+                            ),
+                          ],
                         ),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
-                        child: CupertinoTextField(
-                          controller: _customReactionVolumeController,
-                          placeholder: 'Reaction Volume (µl)',
-                          keyboardType: TextInputType.number,
-                          inputFormatters: [BankStyleDecimalFormatter(decimalPlaces: 1, maxDigits: 5)],
-                          style: TextStyle(color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
-                          placeholderStyle: TextStyle(color: CupertinoColors.placeholderText),
-                          decoration: BoxDecoration(
-                            color: widget.isDarkMode 
-                                ? CupertinoColors.systemGrey5.darkColor
-                                : CupertinoColors.tertiarySystemBackground,
-                            borderRadius: BorderRadius.circular(8.0),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 12.0),
-                          onChanged: (value) => _calculateVolumes(),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'RXN Vol (µl)',
+                              style: TextStyle(
+                                color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            CupertinoTextField(
+                              controller: _customReactionVolumeController,
+                              placeholder: 'Volume',
+                              keyboardType: TextInputType.number,
+                              inputFormatters: [BankStyleDecimalFormatter(decimalPlaces: 1, maxDigits: 5)],
+                              style: TextStyle(color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
+                              placeholderStyle: TextStyle(color: CupertinoColors.placeholderText),
+                              decoration: BoxDecoration(
+                                color: widget.isDarkMode 
+                                    ? CupertinoColors.systemGrey5.darkColor
+                                    : CupertinoColors.tertiarySystemBackground,
+                                borderRadius: BorderRadius.circular(8.0),
+                              ),
+                              padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 12.0),
+                              onChanged: (value) => _calculateVolumes(),
+                            ),
+                          ],
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 16),
-                  CupertinoTextField(
-                    controller: _templateDnaVolumeController,
-                    placeholder: 'Template DNA Volume (µl)',
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [BankStyleDecimalFormatter(decimalPlaces: 1, maxDigits: 5)],
-                    style: TextStyle(color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
-                    placeholderStyle: TextStyle(color: CupertinoColors.placeholderText),
-                    decoration: BoxDecoration(
-                      color: widget.isDarkMode 
-                          ? CupertinoColors.systemGrey5.darkColor
-                          : CupertinoColors.tertiarySystemBackground,
-                      borderRadius: BorderRadius.circular(8.0),
-                    ),
-                    padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 12.0),
-                    onChanged: (value) => _calculateVolumes(),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Template DNA Vol (µl)',
+                        style: TextStyle(
+                          color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      CupertinoTextField(
+                        controller: _templateDnaVolumeController,
+                        placeholder: 'Template Volume',
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [BankStyleDecimalFormatter(decimalPlaces: 1, maxDigits: 5)],
+                        style: TextStyle(color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
+                        placeholderStyle: TextStyle(color: CupertinoColors.placeholderText),
+                        decoration: BoxDecoration(
+                          color: widget.isDarkMode 
+                              ? CupertinoColors.systemGrey5.darkColor
+                              : CupertinoColors.tertiarySystemBackground,
+                          borderRadius: BorderRadius.circular(8.0),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 12.0),
+                        onChanged: (value) => _calculateVolumes(),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 16),
                   Row(

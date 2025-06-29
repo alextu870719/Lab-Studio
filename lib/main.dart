@@ -744,18 +744,26 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
           ),
           const SizedBox(width: 4),
         ],
-        // Optional 開關（只對 optional 試劑顯示，使用較小的尺寸）
+        // Optional 開關（只對 optional 試劑顯示，使用小型圖標）
         if (reagent.isOptional) ...[
-          Transform.scale(
-            scale: 0.8,
-            child: CupertinoSwitch(
-              value: isIncluded,
-              onChanged: (bool value) {
-                setState(() {
-                  _reagentInclusionStatus[reagent.name] = value;
-                  _calculateVolumes();
-                });
-              },
+          GestureDetector(
+            onTap: () {
+              setState(() {
+                _reagentInclusionStatus[reagent.name] = !isIncluded;
+                _calculateVolumes();
+              });
+            },
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              child: Icon(
+                isIncluded 
+                    ? CupertinoIcons.eye_fill 
+                    : CupertinoIcons.eye_slash_fill,
+                color: isIncluded 
+                    ? CupertinoColors.systemGreen 
+                    : CupertinoColors.systemGrey,
+                size: 18,
+              ),
             ),
           ),
           const SizedBox(width: 4),
@@ -908,15 +916,27 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
               ),
             ),
             const SizedBox(width: 8),
-            // Optional 開關（移除標籤，只保留開關）
-            CupertinoSwitch(
-              value: reagent.isOptional,
-              onChanged: (bool value) {
+            // Optional checkbox
+            CupertinoButton(
+              padding: EdgeInsets.zero,
+              onPressed: () {
                 setState(() {
-                  _reagents[index] = reagent.copyWith(isOptional: value);
+                  _reagents[index] = reagent.copyWith(isOptional: !reagent.isOptional);
                   _calculateVolumes();
                 });
               },
+              child: Container(
+                padding: const EdgeInsets.all(8.0),
+                child: Icon(
+                  reagent.isOptional 
+                      ? CupertinoIcons.checkmark_square_fill 
+                      : CupertinoIcons.square,
+                  color: reagent.isOptional 
+                      ? CupertinoColors.systemBlue 
+                      : (widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
+                  size: 22,
+                ),
+              ),
             ),
           ],
         ),

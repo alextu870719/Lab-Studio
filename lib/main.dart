@@ -2730,6 +2730,15 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
                               FocusScope.of(context).unfocus();
                             },
                             inputFormatters: [TimeInputFormatter()],
+                            // 禁止長按選取和游標移動
+                            enableInteractiveSelection: false,
+                            // 禁止點選移動游標
+                            onTap: () {
+                              // 強制游標在最後
+                              step.timeController.selection = TextSelection.collapsed(
+                                offset: step.timeController.text.length,
+                              );
+                            },
                             style: TextStyle(
                               fontSize: 12,
                               color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,

@@ -2333,14 +2333,6 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
   // 移動 Stage 的方法 (待實現拖拽功能時使用)
   // void _moveStage(int oldIndex, int newIndex) { ... }
   
-  void _toggleStageEnabled(int stageIndex) {
-    if (stageIndex >= 0 && stageIndex < _stages.length) {
-      setState(() {
-        _stages[stageIndex].isEnabled = !_stages[stageIndex].isEnabled;
-      });
-    }
-  }
-  
   // Stage 拖拽排序方法
   void _onReorderStages(int oldIndex, int newIndex) {
     if (oldIndex >= 0 && oldIndex < _stages.length && 
@@ -2501,16 +2493,6 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
   
   // 移動 Step 的方法 (待實現拖拽功能時使用)
   // void _moveStep(int fromStageIndex, int fromStepIndex, int toStageIndex, int toStepIndex) { ... }
-  
-  void _toggleStepEnabled(int stageIndex, int stepIndex) {
-    if (stageIndex >= 0 && stageIndex < _stages.length &&
-        stepIndex >= 0 && stepIndex < _stages[stageIndex].steps.length) {
-      setState(() {
-        _stages[stageIndex].steps[stepIndex].isEnabled = 
-            !_stages[stageIndex].steps[stepIndex].isEnabled;
-      });
-    }
-  }
   
   // Step 拖拽排序方法
   void _onReorderSteps(int stageIndex, int oldIndex, int newIndex) {
@@ -3108,9 +3090,7 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
             : CupertinoColors.systemBackground,
         borderRadius: BorderRadius.circular(12.0),
         border: Border.all(
-          color: stage.isEnabled 
-              ? CupertinoColors.separator
-              : CupertinoColors.systemGrey4,
+          color: CupertinoColors.separator,
           width: 0.5,
         ),
       ),
@@ -3153,9 +3133,7 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w600,
-                            color: stage.isEnabled
-                                ? (widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black)
-                                : CupertinoColors.systemGrey,
+                            color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
                           ),
                         ),
                       const SizedBox(height: 4),
@@ -3199,9 +3177,7 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w500,
-                                color: stage.isEnabled
-                                    ? (widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black)
-                                    : CupertinoColors.systemGrey,
+                                color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
                               ),
                             ),
                           const Spacer(),
@@ -3217,14 +3193,6 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
                               ),
                             ),
                           ],
-                          // 啟用/停用開關
-                          Transform.scale(
-                            scale: 0.8,
-                            child: CupertinoSwitch(
-                              value: stage.isEnabled,
-                              onChanged: (value) => _toggleStageEnabled(stageIndex),
-                            ),
-                          ),
                         ],
                       ),
                     ],
@@ -3234,13 +3202,12 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
             ),
           ),
           // Steps
-          if (stage.isEnabled)
-            if (_isEditMode)
-              ..._buildDraggableStepsList(stageIndex)
-            else
-              ...List.generate(stage.steps.length, (stepIndex) {
-                return _buildStepCard(stage.steps[stepIndex], stageIndex, stepIndex);
-              }),
+          if (_isEditMode)
+            ..._buildDraggableStepsList(stageIndex)
+          else
+            ...List.generate(stage.steps.length, (stepIndex) {
+              return _buildStepCard(stage.steps[stepIndex], stageIndex, stepIndex);
+            }),
         ],
       ),
     );
@@ -3339,9 +3306,7 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
-                      color: step.isEnabled
-                          ? (widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black)
-                          : CupertinoColors.systemGrey,
+                      color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
                     ),
                   ),
                 const SizedBox(width: 16),
@@ -3391,21 +3356,10 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
-                      color: step.isEnabled
-                          ? (widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black)
-                          : CupertinoColors.systemGrey,
+                      color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
                     ),
                   ),
               ],
-            ),
-          ),
-          // 控制按鈕（已移除刪除按鈕，僅保留左滑刪除）
-          // 啟用/停用開關
-          Transform.scale(
-            scale: 0.7,
-            child: CupertinoSwitch(
-              value: step.isEnabled,
-              onChanged: (value) => _toggleStepEnabled(stageIndex, stepIndex),
             ),
           ),
         ],

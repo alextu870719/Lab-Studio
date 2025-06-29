@@ -2612,6 +2612,58 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
     Clipboard.setData(ClipboardData(text: buffer.toString()));
   }
   
+  // 列印協議
+  Future<void> _printProtocol() async {
+    final protocol = _getCurrentProtocol();
+
+    final doc = pw.Document();
+
+    doc.addPage(
+      pw.Page(
+        build: (pw.Context context) {
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Text('Lab Studio - PCR Protocol', style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
+              pw.SizedBox(height: 20),
+              pw.Text('Protocol Name: ${protocol.name}', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
+              pw.Text('Date: ${DateTime.now().toString().split(' ')[0]}', style: pw.TextStyle(fontSize: 16)),
+              pw.SizedBox(height: 15),
+              pw.Text('Total Stages: ${protocol.stages.length}'),
+              pw.Text('Estimated Total Time: ${protocol.getTotalTime().toStringAsFixed(1)} minutes'),
+              pw.SizedBox(height: 20),
+              pw.Text('Protocol Details:', style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
+              pw.SizedBox(height: 10),
+              ...protocol.stages.asMap().entries.where((entry) => entry.value.isEnabled).map((entry) {
+                final i = entry.key;
+                final stage = entry.value;
+                return pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text('Stage ${i + 1}: ${stage.name} (${stage.cycles} cycles)', 
+                             style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
+                    pw.SizedBox(height: 5),
+                    ...stage.steps.asMap().entries.where((stepEntry) => stepEntry.value.isEnabled).map((stepEntry) {
+                      final j = stepEntry.key;
+                      final step = stepEntry.value;
+                      return pw.Padding(
+                        padding: const pw.EdgeInsets.only(left: 20),
+                        child: pw.Text('Step ${j + 1}: ${step.name} - ${step.temperature}°C for ${_formatTime(step.duration)}'),
+                      );
+                    }).toList(),
+                    pw.SizedBox(height: 10),
+                  ],
+                );
+              }).toList(),
+            ],
+          );
+        },
+      ),
+    );
+
+    await Printing.sharePdf(bytes: await doc.save(), filename: 'lab_studio_pcr_protocol.pdf');
+  }
+  
   // 保存配置
   Future<void> _saveConfiguration() async {
     final TextEditingController nameController = TextEditingController(text: _currentProtocolName);
@@ -3323,35 +3375,16 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
           'PCR Reaction',
           style: TextStyle(color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
         ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // 快速協議按鈕
-            CupertinoButton(
-              padding: EdgeInsets.zero,
-              onPressed: () {
-                _showProtocolTemplates();
-              },
-              child: Icon(
-                CupertinoIcons.lab_flask,
-                size: 24,
-                color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
-              ),
-            ),
-            // 編輯按鈕
-            CupertinoButton(
-              padding: EdgeInsets.zero,
-              onPressed: () {
-                setState(() {
-                  _isEditMode = !_isEditMode;
-                });
-              },
-              child: Text(
-                _isEditMode ? 'Done' : 'Edit',
-                style: TextStyle(color: CupertinoColors.systemBlue),
-              ),
-            ),
-          ],
+        trailing: CupertinoButton(
+          padding: EdgeInsets.zero,
+          onPressed: () {
+            _showProtocolTemplates();
+          },
+          child: Icon(
+            CupertinoIcons.lab_flask,
+            size: 24,
+            color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
+          ),
         ),
       ),
       child: SafeArea(
@@ -3483,29 +3516,19 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
                       children: [
                         Expanded(
                           child: CupertinoButton.filled(
-                            onPressed: _saveConfiguration,
-                            child: Text(
-                              'Save',
-                              style: TextStyle(color: CupertinoColors.white),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: CupertinoButton.filled(
-                            onPressed: _loadConfiguration,
-                            child: Text(
-                              'Load',
-                              style: TextStyle(color: CupertinoColors.white),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: CupertinoButton.filled(
                             onPressed: _clearAllInputs,
                             child: Text(
                               'Clear',
+                              style: TextStyle(color: CupertinoColors.white),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: CupertinoButton.filled(
+                            onPressed: _printProtocol,
+                            child: Text(
+                              'Print',
                               style: TextStyle(color: CupertinoColors.white),
                             ),
                           ),
@@ -3527,7 +3550,7 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
               ),
               const SizedBox(height: 16),
               
-              // PCR Stages 設定標題和編輯模式按鈕
+              // PCR Stages 設定標題和操作按鈕
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -3538,32 +3561,88 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
                       color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
                     ),
                   ),
-                  if (_isEditMode)
-                    CupertinoButton(
-                      padding: EdgeInsets.zero,
-                      onPressed: _addNewStage,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            CupertinoIcons.add_circled,
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Edit 按鈕
+                      CupertinoButton(
+                        padding: EdgeInsets.zero,
+                        onPressed: () {
+                          setState(() {
+                            _isEditMode = !_isEditMode;
+                          });
+                        },
+                        child: Text(
+                          _isEditMode ? 'Done' : 'Edit',
+                          style: TextStyle(
                             color: CupertinoColors.systemBlue,
-                            size: 20,
+                            fontSize: 16,
                           ),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Add Stage',
-                            style: TextStyle(
-                              color: CupertinoColors.systemBlue,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
-                    ),
+                    ],
+                  ),
                 ],
               ),
               const SizedBox(height: 8),
+              
+              // Protocol 操作按鈕
+              Row(
+                children: [
+                  Expanded(
+                    child: CupertinoButton.filled(
+                      onPressed: _saveConfiguration,
+                      child: Text(
+                        'Save',
+                        style: TextStyle(color: CupertinoColors.white),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: CupertinoButton.filled(
+                      onPressed: _loadConfiguration,
+                      child: Text(
+                        'Load',
+                        style: TextStyle(color: CupertinoColors.white),
+                      ),
+                    ),
+                  ),
+                  if (_isEditMode) ...[
+                    const SizedBox(width: 16),
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        // 添加空白空間來佔位，讓按鈕底部對齊
+                        SizedBox(height: 2),
+                        Text(
+                          'Add Stage',
+                          style: TextStyle(
+                            color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        SizedBox(
+                          height: 36, // 與 CupertinoButton.filled 預設高度一致
+                          child: CupertinoButton.filled(
+                            padding: EdgeInsets.symmetric(horizontal: 16),
+                            onPressed: _addNewStage,
+                            child: Icon(
+                              CupertinoIcons.add_circled,
+                              color: CupertinoColors.white,
+                              size: 20,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+              const SizedBox(height: 16),
               
               // Stages 列表
               if (_isEditMode)

@@ -1317,13 +1317,20 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
           ),
         ),
       ),
-      child: GestureDetector(
-        onTap: () {
-          // 點擊空白處關閉鍵盤
-          FocusScope.of(context).unfocus();
+      child: SafeArea(
+        child: GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          onTap: () {
+            // 簡化的鍵盤關閉邏輯
+            FocusManager.instance.primaryFocus?.unfocus();
+          },
+          child: NotificationListener<ScrollNotification>(
+        onNotification: (ScrollNotification notification) {
+          // 滾動時簡化的鍵盤關閉
+          FocusManager.instance.primaryFocus?.unfocus();
+          return false;
         },
-        child: SafeArea(
-        child: ListView(
+          child: ListView(
           padding: const EdgeInsets.all(16.0),
           children: [
             // Parameters Section
@@ -1354,6 +1361,13 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                         child: CupertinoTextField(
                           controller: _experimentNameController,
                           placeholder: 'Experiment Name',
+                          textInputAction: TextInputAction.done,
+                          onEditingComplete: () {
+                            final currentFocus = FocusScope.of(context);
+                            if (currentFocus.hasFocus) {
+                              currentFocus.unfocus();
+                            }
+                          },
                           style: TextStyle(color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
                           placeholderStyle: TextStyle(color: CupertinoColors.placeholderText),
                           decoration: BoxDecoration(
@@ -1407,6 +1421,8 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                               controller: _numReactionsController,
                               placeholder: '# RXN',
                               keyboardType: TextInputType.number,
+                              textInputAction: TextInputAction.next,
+                              onEditingComplete: () => FocusScope.of(context).nextFocus(),
                               inputFormatters: [BankStyleIntegerFormatter(maxDigits: 3)],
                               style: TextStyle(color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
                               placeholderStyle: TextStyle(color: CupertinoColors.placeholderText),
@@ -1440,6 +1456,8 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                               controller: _customReactionVolumeController,
                               placeholder: 'Volume',
                               keyboardType: TextInputType.number,
+                              textInputAction: TextInputAction.next,
+                              onEditingComplete: () => FocusScope.of(context).nextFocus(),
                               inputFormatters: [BankStyleDecimalFormatter(decimalPlaces: 1, maxDigits: 5)],
                               style: TextStyle(color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
                               placeholderStyle: TextStyle(color: CupertinoColors.placeholderText),
@@ -1732,8 +1750,9 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                   ),
           ],
         ),
+        ), // NotificationListener
+        ), // GestureDetector
       ), // SafeArea
-      ), // GestureDetector
     );
   }
 }
@@ -2487,6 +2506,10 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
                               child: CupertinoTextField(
                                 controller: stage.cyclesController,
                                 keyboardType: TextInputType.number,
+                                textInputAction: TextInputAction.done,
+                                onEditingComplete: () {
+                                  FocusScope.of(context).unfocus();
+                                },
                                 style: TextStyle(
                                   fontSize: 14,
                                   color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
@@ -2655,6 +2678,10 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
                           child: CupertinoTextField(
                             controller: step.tempController,
                             keyboardType: TextInputType.number,
+                            textInputAction: TextInputAction.next,
+                            onEditingComplete: () {
+                              FocusScope.of(context).nextFocus();
+                            },
                             style: TextStyle(
                               fontSize: 12,
                               color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
@@ -2689,6 +2716,10 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
                           child: CupertinoTextField(
                             controller: step.timeController,
                             keyboardType: TextInputType.number,
+                            textInputAction: TextInputAction.done,
+                            onEditingComplete: () {
+                              FocusScope.of(context).unfocus();
+                            },
                             style: TextStyle(
                               fontSize: 12,
                               color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
@@ -2785,14 +2816,22 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
           ],
         ),
       ),
-      child: GestureDetector(
-        onTap: () {
-          FocusScope.of(context).unfocus();
-        },
-        child: SafeArea(
-          child: ListView(
-            padding: const EdgeInsets.all(16.0),
-            children: [
+      child: SafeArea(
+        child: GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          onTap: () {
+            // 簡化的鍵盤關閉邏輯
+            FocusManager.instance.primaryFocus?.unfocus();
+          },
+          child: NotificationListener<ScrollNotification>(
+          onNotification: (ScrollNotification notification) {
+            // 滾動時簡化的鍵盤關閉
+            FocusManager.instance.primaryFocus?.unfocus();
+            return false;
+          },
+            child: ListView(
+              padding: const EdgeInsets.all(16.0),
+              children: [
               // 協議名稱和總覽
               Container(
                 decoration: BoxDecoration(
@@ -2816,6 +2855,10 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
                     CupertinoTextField(
                       controller: _protocolNameController,
                       placeholder: 'Protocol Name',
+                      textInputAction: TextInputAction.done,
+                      onEditingComplete: () {
+                        FocusScope.of(context).unfocus();
+                      },
                       style: TextStyle(color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
                       placeholderStyle: TextStyle(color: CupertinoColors.placeholderText),
                       decoration: BoxDecoration(
@@ -2973,8 +3016,9 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
               const SizedBox(height: 32),
             ],
           ),
-        ),
-      ),
+        ), // NotificationListener
+        ), // GestureDetector  
+      ), // SafeArea
     );
   }
   
@@ -3134,14 +3178,17 @@ class SettingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.6,
-      decoration: BoxDecoration(
-        color: isDarkMode 
-            ? CupertinoColors.systemGrey6.darkColor
-            : CupertinoColors.systemBackground,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      behavior: HitTestBehavior.translucent,
+      child: Container(
+        height: MediaQuery.of(context).size.height * 0.6,
+        decoration: BoxDecoration(
+          color: isDarkMode 
+              ? CupertinoColors.systemGrey6.darkColor
+              : CupertinoColors.systemBackground,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
       child: Column(
         children: [
           // 頂部拖動條
@@ -3249,7 +3296,8 @@ class SettingsPage extends StatelessWidget {
           ),
         ],
       ),
-    );
+      ), // Container (wrapped by GestureDetector)
+    ); // GestureDetector
   }
 }
 
@@ -3347,14 +3395,17 @@ class _ConfigurationSelectorState extends State<ConfigurationSelector> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.7,
-      decoration: BoxDecoration(
-        color: widget.isDarkMode 
-            ? CupertinoColors.systemGrey6.darkColor
-            : CupertinoColors.systemBackground,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      behavior: HitTestBehavior.translucent,
+      child: Container(
+        height: MediaQuery.of(context).size.height * 0.7,
+        decoration: BoxDecoration(
+          color: widget.isDarkMode 
+              ? CupertinoColors.systemGrey6.darkColor
+              : CupertinoColors.systemBackground,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
       child: Column(
         children: [
           // 頂部拖動條
@@ -3452,6 +3503,7 @@ class _ConfigurationSelectorState extends State<ConfigurationSelector> {
           ),
         ],
       ),
-    );
+      ), // Container (wrapped by GestureDetector)
+    ); // GestureDetector
   }
 }

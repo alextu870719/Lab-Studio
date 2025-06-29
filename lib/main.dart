@@ -2258,6 +2258,139 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
     }
   }
   
+  // Stage 拖拽排序方法
+  void _onReorderStages(int oldIndex, int newIndex) {
+    if (oldIndex >= 0 && oldIndex < _stages.length && 
+        newIndex >= 0 && newIndex < _stages.length &&
+        oldIndex != newIndex) {
+      
+      setState(() {
+        final stage = _stages.removeAt(oldIndex);
+        _stages.insert(newIndex, stage);
+      });
+      
+      // 提供觸覺反饋
+      HapticFeedback.lightImpact();
+    }
+  }
+  
+  // 建構可拖拽的 Stage 列表
+  List<Widget> _buildDraggableStagesList() {
+    List<Widget> widgets = [];
+    for (int index = 0; index < _stages.length; index++) {
+      widgets.add(
+        _buildDraggableStageItem(_stages[index], index),
+      );
+    }
+    return widgets;
+  }
+  
+  Widget _buildDraggableStageItem(EditablePcrStage stage, int stageIndex) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 4.0),
+      child: DragTarget<int>(
+        onWillAcceptWithDetails: (details) {
+          return details.data != stageIndex;
+        },
+        onAcceptWithDetails: (details) {
+          if (details.data != stageIndex) {
+            _onReorderStages(details.data, stageIndex);
+          }
+        },
+        builder: (context, candidateData, rejectedData) {
+          bool isHighlighted = candidateData.isNotEmpty;
+          
+          return AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            decoration: BoxDecoration(
+              color: isHighlighted
+                  ? CupertinoColors.systemBlue.withOpacity(0.1)
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(12.0),
+              border: isHighlighted ? Border.all(
+                color: CupertinoColors.systemBlue,
+                width: 2.0,
+              ) : null,
+            ),
+            child: Row(
+              children: [
+                // 拖拽手柄 - 只有這個區域可以觸發拖拽
+                if (_isEditMode)
+                  Draggable<int>(
+                    data: stageIndex,
+                    feedback: Material(
+                      color: Colors.transparent,
+                      child: Container(
+                        width: 60,
+                        height: 60,
+                        decoration: BoxDecoration(
+                          color: widget.isDarkMode 
+                              ? CupertinoColors.systemGrey6.darkColor
+                              : CupertinoColors.systemBackground,
+                          borderRadius: BorderRadius.circular(12.0),
+                          border: Border.all(
+                            color: CupertinoColors.systemBlue,
+                            width: 2.0,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: CupertinoColors.systemBlue.withOpacity(0.4),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Icon(
+                          CupertinoIcons.bars,
+                          color: CupertinoColors.systemBlue,
+                          size: 24,
+                        ),
+                      ),
+                    ),
+                    childWhenDragging: Container(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Icon(
+                        CupertinoIcons.bars,
+                        color: CupertinoColors.secondaryLabel,
+                        size: 20,
+                      ),
+                    ),
+                    onDragStarted: () {
+                      HapticFeedback.mediumImpact();
+                    },
+                    onDragEnd: (details) {
+                      // 拖拽結束
+                    },
+                    child: GestureDetector(
+                      onTap: () {
+                        HapticFeedback.lightImpact();
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(8.0),
+                        decoration: BoxDecoration(
+                          color: Colors.transparent,
+                          borderRadius: BorderRadius.circular(8.0),
+                        ),
+                        child: Icon(
+                          CupertinoIcons.bars,
+                          color: CupertinoColors.systemGrey,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                  ),
+                // Stage 內容
+                Expanded(
+                  child: _buildStageCard(stage, stageIndex),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+  
   // Step 操作方法
   void _addNewStep(int stageIndex) {
     if (stageIndex >= 0 && stageIndex < _stages.length) {
@@ -2294,6 +2427,142 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
             !_stages[stageIndex].steps[stepIndex].isEnabled;
       });
     }
+  }
+  
+  // Step 拖拽排序方法
+  void _onReorderSteps(int stageIndex, int oldIndex, int newIndex) {
+    if (stageIndex >= 0 && stageIndex < _stages.length &&
+        oldIndex >= 0 && oldIndex < _stages[stageIndex].steps.length && 
+        newIndex >= 0 && newIndex < _stages[stageIndex].steps.length &&
+        oldIndex != newIndex) {
+      
+      setState(() {
+        final step = _stages[stageIndex].steps.removeAt(oldIndex);
+        _stages[stageIndex].steps.insert(newIndex, step);
+      });
+      
+      // 提供觸覺反饋
+      HapticFeedback.lightImpact();
+    }
+  }
+  
+  // 建構可拖拽的 Step 列表
+  List<Widget> _buildDraggableStepsList(int stageIndex) {
+    if (stageIndex < 0 || stageIndex >= _stages.length) return [];
+    
+    List<Widget> widgets = [];
+    for (int index = 0; index < _stages[stageIndex].steps.length; index++) {
+      widgets.add(
+        _buildDraggableStepItem(_stages[stageIndex].steps[index], stageIndex, index),
+      );
+    }
+    return widgets;
+  }
+  
+  Widget _buildDraggableStepItem(EditablePcrStep step, int stageIndex, int stepIndex) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 2.0),
+      child: DragTarget<Map<String, int>>(
+        onWillAcceptWithDetails: (details) {
+          return details.data['stageIndex'] == stageIndex && details.data['stepIndex'] != stepIndex;
+        },
+        onAcceptWithDetails: (details) {
+          if (details.data['stageIndex'] == stageIndex && details.data['stepIndex'] != stepIndex) {
+            _onReorderSteps(stageIndex, details.data['stepIndex']!, stepIndex);
+          }
+        },
+        builder: (context, candidateData, rejectedData) {
+          bool isHighlighted = candidateData.isNotEmpty;
+          
+          return AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            decoration: BoxDecoration(
+              color: isHighlighted
+                  ? CupertinoColors.systemBlue.withOpacity(0.1)
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(8.0),
+              border: isHighlighted ? Border.all(
+                color: CupertinoColors.systemBlue,
+                width: 1.0,
+              ) : null,
+            ),
+            child: Row(
+              children: [
+                // 拖拽手柄 - 只有這個區域可以觸發拖拽
+                if (_isEditMode)
+                  Draggable<Map<String, int>>(
+                    data: {'stageIndex': stageIndex, 'stepIndex': stepIndex},
+                    feedback: Material(
+                      color: Colors.transparent,
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: widget.isDarkMode 
+                              ? CupertinoColors.systemGrey6.darkColor
+                              : CupertinoColors.systemBackground,
+                          borderRadius: BorderRadius.circular(8.0),
+                          border: Border.all(
+                            color: CupertinoColors.systemBlue,
+                            width: 2.0,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: CupertinoColors.systemBlue.withOpacity(0.4),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Icon(
+                          CupertinoIcons.bars,
+                          color: CupertinoColors.systemBlue,
+                          size: 16,
+                        ),
+                      ),
+                    ),
+                    childWhenDragging: Container(
+                      padding: const EdgeInsets.all(4.0),
+                      child: Icon(
+                        CupertinoIcons.bars,
+                        color: CupertinoColors.secondaryLabel,
+                        size: 16,
+                      ),
+                    ),
+                    onDragStarted: () {
+                      HapticFeedback.lightImpact();
+                    },
+                    onDragEnd: (details) {
+                      // 拖拽結束
+                    },
+                    child: GestureDetector(
+                      onTap: () {
+                        HapticFeedback.lightImpact();
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(4.0),
+                        decoration: BoxDecoration(
+                          color: Colors.transparent,
+                          borderRadius: BorderRadius.circular(4.0),
+                        ),
+                        child: Icon(
+                          CupertinoIcons.bars,
+                          color: CupertinoColors.systemGrey,
+                          size: 16,
+                        ),
+                      ),
+                    ),
+                  ),
+                // Step 內容
+                Expanded(
+                  child: _buildStepCard(step, stageIndex, stepIndex),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
   }
   
   // 格式化時間
@@ -2447,27 +2716,6 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
             padding: const EdgeInsets.all(16.0),
             child: Row(
               children: [
-                // 拖拽手柄（編輯模式）
-                if (_isEditMode) ...[
-                  GestureDetector(
-                    onPanStart: (details) {
-                      // _draggedStageIndex = stageIndex; // 待實現
-                      HapticFeedback.mediumImpact();
-                    },
-                    onPanEnd: (details) {
-                      // _draggedStageIndex = null; // 待實現
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0),
-                      child: const Icon(
-                        CupertinoIcons.bars,
-                        color: CupertinoColors.systemGrey,
-                        size: 20,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                ],
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -2592,9 +2840,12 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
           ),
           // Steps
           if (stage.isEnabled)
-            ...List.generate(stage.steps.length, (stepIndex) {
-              return _buildStepCard(stage.steps[stepIndex], stageIndex, stepIndex);
-            }),
+            if (_isEditMode)
+              ..._buildDraggableStepsList(stageIndex)
+            else
+              ...List.generate(stage.steps.length, (stepIndex) {
+                return _buildStepCard(stage.steps[stepIndex], stageIndex, stepIndex);
+              }),
         ],
       ),
     );
@@ -2612,29 +2863,6 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
       ),
       child: Row(
         children: [
-          // 拖拽手柄（編輯模式）
-          if (_isEditMode) ...[
-            GestureDetector(
-              onPanStart: (details) {
-                // _draggedStepIndex = stepIndex; // 待實現
-                // _draggedStepStageId = _stages[stageIndex].id; // 待實現
-                HapticFeedback.lightImpact();
-              },
-              onPanEnd: (details) {
-                // _draggedStepIndex = null; // 待實現
-                // _draggedStepStageId = null; // 待實現
-              },
-              child: Container(
-                padding: const EdgeInsets.all(4.0),
-                child: const Icon(
-                  CupertinoIcons.bars,
-                  color: CupertinoColors.systemGrey,
-                  size: 16,
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-          ],
           // Step 圖示
           Icon(
             step.icon,
@@ -3035,9 +3263,12 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
               const SizedBox(height: 8),
               
               // Stages 列表
-              ...List.generate(_stages.length, (index) {
-                return _buildStageCard(_stages[index], index);
-              }),
+              if (_isEditMode)
+                ..._buildDraggableStagesList()
+              else
+                ...List.generate(_stages.length, (index) {
+                  return _buildStageCard(_stages[index], index);
+                }),
               
               const SizedBox(height: 32),
             ],

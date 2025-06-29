@@ -2707,6 +2707,7 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
                           child: CupertinoTextField(
                             controller: step.tempController,
                             keyboardType: TextInputType.number,
+                            inputFormatters: [BankStyleDecimalFormatter(decimalPlaces: 1, maxDigits: 5)],
                             textInputAction: TextInputAction.next,
                             onEditingComplete: () {
                               // 安全的焦點跳轉

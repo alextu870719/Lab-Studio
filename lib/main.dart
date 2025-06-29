@@ -878,6 +878,11 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                 key: ValueKey('name_$index'),
                 placeholder: 'Reagent Name',
                 controller: _reagentNameControllers[index],
+                textInputAction: TextInputAction.next,
+                onEditingComplete: () {
+                  // 安全的焦點跳轉
+                  FocusScope.of(context).nextFocus();
+                },
                 style: TextStyle(color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
                 placeholderStyle: TextStyle(color: CupertinoColors.placeholderText),
                 onChanged: (value) {
@@ -911,6 +916,13 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                 placeholder: 'Volume',
                 controller: _reagentVolumeControllers[index],
                 keyboardType: TextInputType.number,
+                textInputAction: TextInputAction.done,
+                onEditingComplete: () {
+                  final currentFocus = FocusScope.of(context);
+                  if (currentFocus.hasFocus) {
+                    currentFocus.unfocus();
+                  }
+                },
                 inputFormatters: [BankStyleDecimalFormatter(decimalPlaces: 1, maxDigits: 5)],
                 style: TextStyle(color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
                 placeholderStyle: TextStyle(color: CupertinoColors.placeholderText),
@@ -1319,15 +1331,14 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
       ),
       child: SafeArea(
         child: GestureDetector(
-          behavior: HitTestBehavior.translucent,
+          behavior: HitTestBehavior.opaque,
           onTap: () {
-            // 簡化的鍵盤關閉邏輯
+            // 強制隱藏鍵盤 - 使用更強力的方法
             FocusManager.instance.primaryFocus?.unfocus();
           },
           child: NotificationListener<ScrollNotification>(
         onNotification: (ScrollNotification notification) {
-          // 滾動時簡化的鍵盤關閉
-          FocusManager.instance.primaryFocus?.unfocus();
+          // 移除滾動時自動關閉鍵盤，避免影響輸入體驗
           return false;
         },
           child: ListView(
@@ -1422,7 +1433,10 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                               placeholder: '# RXN',
                               keyboardType: TextInputType.number,
                               textInputAction: TextInputAction.next,
-                              onEditingComplete: () => FocusScope.of(context).nextFocus(),
+                              onEditingComplete: () {
+                                // 安全的焦點跳轉
+                                FocusScope.of(context).nextFocus();
+                              },
                               inputFormatters: [BankStyleIntegerFormatter(maxDigits: 3)],
                               style: TextStyle(color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
                               placeholderStyle: TextStyle(color: CupertinoColors.placeholderText),
@@ -1457,7 +1471,10 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                               placeholder: 'Volume',
                               keyboardType: TextInputType.number,
                               textInputAction: TextInputAction.next,
-                              onEditingComplete: () => FocusScope.of(context).nextFocus(),
+                              onEditingComplete: () {
+                                // 安全的焦點跳轉
+                                FocusScope.of(context).nextFocus();
+                              },
                               inputFormatters: [BankStyleDecimalFormatter(decimalPlaces: 1, maxDigits: 5)],
                               style: TextStyle(color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
                               placeholderStyle: TextStyle(color: CupertinoColors.placeholderText),
@@ -1492,6 +1509,13 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                         controller: _templateDnaVolumeController,
                         placeholder: 'Template Volume',
                         keyboardType: TextInputType.number,
+                        textInputAction: TextInputAction.done,
+                        onEditingComplete: () {
+                          final currentFocus = FocusScope.of(context);
+                          if (currentFocus.hasFocus) {
+                            currentFocus.unfocus();
+                          }
+                        },
                         inputFormatters: [BankStyleDecimalFormatter(decimalPlaces: 1, maxDigits: 5)],
                         style: TextStyle(color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
                         placeholderStyle: TextStyle(color: CupertinoColors.placeholderText),
@@ -2680,6 +2704,7 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
                             keyboardType: TextInputType.number,
                             textInputAction: TextInputAction.next,
                             onEditingComplete: () {
+                              // 安全的焦點跳轉
                               FocusScope.of(context).nextFocus();
                             },
                             style: TextStyle(
@@ -2818,15 +2843,14 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
       ),
       child: SafeArea(
         child: GestureDetector(
-          behavior: HitTestBehavior.translucent,
+          behavior: HitTestBehavior.opaque,
           onTap: () {
-            // 簡化的鍵盤關閉邏輯
+            // 強制隱藏鍵盤 - 使用更強力的方法
             FocusManager.instance.primaryFocus?.unfocus();
           },
           child: NotificationListener<ScrollNotification>(
           onNotification: (ScrollNotification notification) {
-            // 滾動時簡化的鍵盤關閉
-            FocusManager.instance.primaryFocus?.unfocus();
+            // 移除滾動時自動關閉鍵盤，避免影響輸入體驗
             return false;
           },
             child: ListView(

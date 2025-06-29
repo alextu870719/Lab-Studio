@@ -3296,43 +3296,46 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
       ),
       child: Row(
         children: [
-          // Step 圖示
-          Icon(
-            step.icon,
-            color: step.isEnabled 
-                ? CupertinoColors.systemBlue 
-                : CupertinoColors.systemGrey,
-            size: 18,
-          ),
-          const SizedBox(width: 8),
-          // Step 內容
+          // Step 內容 - 簡化版，只顯示溫度和時間（移除圖示）
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
               children: [
+                // 溫度
                 if (_isEditMode)
-                  CupertinoTextField(
-                    controller: step.nameController,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
+                  Flexible(
+                    flex: 1,
+                    child: Container(
+                      constraints: const BoxConstraints(maxWidth: 80),
+                      child: CupertinoTextField(
+                        controller: step.tempController,
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [BankStyleDecimalFormatter(decimalPlaces: 1, maxDigits: 5)],
+                        textInputAction: TextInputAction.next,
+                        onEditingComplete: () {
+                          // 安全的焦點跳轉
+                          FocusScope.of(context).nextFocus();
+                        },
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
+                        ),
+                        decoration: BoxDecoration(
+                          color: widget.isDarkMode 
+                              ? CupertinoColors.systemGrey6.darkColor
+                              : CupertinoColors.systemBackground,
+                          borderRadius: BorderRadius.circular(6.0),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 8.0),
+                        suffix: Text('°C', style: TextStyle(fontSize: 12, color: widget.isDarkMode ? CupertinoColors.systemGrey2 : CupertinoColors.secondaryLabel)),
+                        // 移除 onChanged 中的 setState，避免輸入時重建導致失焦
+                        // onChanged: (value) => setState(() {}),
+                      ),
                     ),
-                    decoration: BoxDecoration(
-                      color: widget.isDarkMode 
-                          ? CupertinoColors.systemGrey6.darkColor
-                          : CupertinoColors.systemBackground,
-                      borderRadius: BorderRadius.circular(6.0),
-                    ),
-                    padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
-                    // 移除 onChanged 中的 setState，避免輸入時重建導致失焦
-                    // onChanged: (value) {
-                    //   step.name = value;
-                    // },
                   )
                 else
                   Text(
-                    step.nameController.text,
+                    '${step.tempController.text}°C',
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
@@ -3341,99 +3344,58 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
                           : CupertinoColors.systemGrey,
                     ),
                   ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    // 溫度
-                    if (_isEditMode)
-                      Flexible(
-                        flex: 1,
-                        child: Container(
-                          constraints: const BoxConstraints(maxWidth: 70),
-                          child: CupertinoTextField(
-                            controller: step.tempController,
-                            keyboardType: TextInputType.number,
-                            inputFormatters: [BankStyleDecimalFormatter(decimalPlaces: 1, maxDigits: 5)],
-                            textInputAction: TextInputAction.next,
-                            onEditingComplete: () {
-                              // 安全的焦點跳轉
-                              FocusScope.of(context).nextFocus();
-                            },
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
-                            ),
-                            decoration: BoxDecoration(
-                              color: widget.isDarkMode 
-                                  ? CupertinoColors.systemGrey6.darkColor
-                                  : CupertinoColors.systemBackground,
-                              borderRadius: BorderRadius.circular(4.0),
-                            ),
-                            padding: const EdgeInsets.symmetric(vertical: 2.0, horizontal: 6.0),
-                            suffix: Text('°C', style: TextStyle(fontSize: 10, color: widget.isDarkMode ? CupertinoColors.systemGrey2 : CupertinoColors.secondaryLabel)),
-                            // 移除 onChanged 中的 setState，避免輸入時重建導致失焦
-                            // onChanged: (value) => setState(() {}),
-                          ),
-                        ),
-                      )
-                    else
-                      Text(
-                        '${step.tempController.text}°C',
+                const SizedBox(width: 16),
+                // 時間
+                if (_isEditMode)
+                  Flexible(
+                    flex: 1,
+                    child: Container(
+                      constraints: const BoxConstraints(maxWidth: 100),
+                      child: CupertinoTextField(
+                        controller: step.timeController,
+                        keyboardType: TextInputType.number,
+                        textInputAction: TextInputAction.done,
+                        onEditingComplete: () {
+                          FocusScope.of(context).unfocus();
+                        },
+                        inputFormatters: [TimeInputFormatter()],
+                        // 禁止長按選取和游標移動
+                        enableInteractiveSelection: false,
+                        // 禁止點選移動游標
+                        onTap: () {
+                          // 強制游標在最後
+                          step.timeController.selection = TextSelection.collapsed(
+                            offset: step.timeController.text.length,
+                          );
+                        },
                         style: TextStyle(
-                          fontSize: 12,
-                          color: widget.isDarkMode ? CupertinoColors.systemGrey2 : CupertinoColors.secondaryLabel,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
                         ),
+                        decoration: BoxDecoration(
+                          color: widget.isDarkMode 
+                              ? CupertinoColors.systemGrey6.darkColor
+                              : CupertinoColors.systemBackground,
+                          borderRadius: BorderRadius.circular(6.0),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 8.0),
+                        // 移除 onChanged 中的 setState，避免輸入時重建導致失焦
+                        // onChanged: (value) => setState(() {}),
                       ),
-                    const SizedBox(width: 12),
-                    // 時間
-                    if (_isEditMode)
-                      Flexible(
-                        flex: 1,
-                        child: Container(
-                          constraints: const BoxConstraints(maxWidth: 90),
-                          child: CupertinoTextField(
-                            controller: step.timeController,
-                            keyboardType: TextInputType.number,
-                            textInputAction: TextInputAction.done,
-                            onEditingComplete: () {
-                              FocusScope.of(context).unfocus();
-                            },
-                            inputFormatters: [TimeInputFormatter()],
-                            // 禁止長按選取和游標移動
-                            enableInteractiveSelection: false,
-                            // 禁止點選移動游標
-                            onTap: () {
-                              // 強制游標在最後
-                              step.timeController.selection = TextSelection.collapsed(
-                                offset: step.timeController.text.length,
-                              );
-                            },
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
-                            ),
-                            decoration: BoxDecoration(
-                              color: widget.isDarkMode 
-                                  ? CupertinoColors.systemGrey6.darkColor
-                                  : CupertinoColors.systemBackground,
-                              borderRadius: BorderRadius.circular(4.0),
-                            ),
-                            padding: const EdgeInsets.symmetric(vertical: 2.0, horizontal: 6.0),
-                            // 移除 onChanged 中的 setState，避免輸入時重建導致失焦
-                            // onChanged: (value) => setState(() {}),
-                          ),
-                        ),
-                      )
-                    else
-                      Text(
-                        _formatTime(TimeInputFormatter.parseTimeToSeconds(step.timeController.text)),
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: widget.isDarkMode ? CupertinoColors.systemGrey2 : CupertinoColors.secondaryLabel,
-                        ),
-                      ),
-                  ],
-                ),
+                    ),
+                  )
+                else
+                  Text(
+                    _formatTime(TimeInputFormatter.parseTimeToSeconds(step.timeController.text)),
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: step.isEnabled
+                          ? (widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black)
+                          : CupertinoColors.systemGrey,
+                    ),
+                  ),
               ],
             ),
           ),

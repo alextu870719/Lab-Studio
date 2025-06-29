@@ -1738,19 +1738,21 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
   }
 }
 
-// PCR Reaction 設定相關的數據模型
+// PCR Step 資料結構
 class PcrStep {
+  final String id;
   final String name;
   final double temperature;
   final int duration; // 秒
   final bool isEnabled;
   
   PcrStep({
+    String? id,
     required this.name,
     required this.temperature,
     required this.duration,
     this.isEnabled = true,
-  });
+  }) : id = id ?? DateTime.now().millisecondsSinceEpoch.toString() + name.hashCode.toString();
   
   PcrStep copyWith({
     String? name,
@@ -1759,6 +1761,7 @@ class PcrStep {
     bool? isEnabled,
   }) {
     return PcrStep(
+      id: id,
       name: name ?? this.name,
       temperature: temperature ?? this.temperature,
       duration: duration ?? this.duration,
@@ -1768,6 +1771,7 @@ class PcrStep {
   
   Map<String, dynamic> toJson() {
     return {
+      'id': id,
       'name': name,
       'temperature': temperature,
       'duration': duration,
@@ -1777,6 +1781,7 @@ class PcrStep {
   
   factory PcrStep.fromJson(Map<String, dynamic> json) {
     return PcrStep(
+      id: json['id'],
       name: json['name'] ?? '',
       temperature: (json['temperature'] ?? 0.0).toDouble(),
       duration: json['duration'] ?? 0,
@@ -1785,14 +1790,77 @@ class PcrStep {
   }
 }
 
+// PCR Stage 資料結構
+class PcrStage {
+  final String id;
+  final String name;
+  final int cycles;
+  final List<PcrStep> steps;
+  final bool isEnabled;
+  
+  PcrStage({
+    String? id,
+    required this.name,
+    required this.cycles,
+    required this.steps,
+    this.isEnabled = true,
+  }) : id = id ?? DateTime.now().millisecondsSinceEpoch.toString() + name.hashCode.toString();
+  
+  PcrStage copyWith({
+    String? name,
+    int? cycles,
+    List<PcrStep>? steps,
+    bool? isEnabled,
+  }) {
+    return PcrStage(
+      id: id,
+      name: name ?? this.name,
+      cycles: cycles ?? this.cycles,
+      steps: steps ?? this.steps,
+      isEnabled: isEnabled ?? this.isEnabled,
+    );
+  }
+  
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'cycles': cycles,
+      'steps': steps.map((s) => s.toJson()).toList(),
+      'isEnabled': isEnabled,
+    };
+  }
+  
+  factory PcrStage.fromJson(Map<String, dynamic> json) {
+    return PcrStage(
+      id: json['id'],
+      name: json['name'] ?? '',
+      cycles: json['cycles'] ?? 1,
+      steps: (json['steps'] as List? ?? [])
+          .map((s) => PcrStep.fromJson(s as Map<String, dynamic>))
+          .toList(),
+      isEnabled: json['isEnabled'] ?? true,
+    );
+  }
+  
+  // 計算這個 Stage 的總時間（秒）
+  double getTotalTime() {
+    double stepTime = 0;
+    for (var step in steps) {
+      if (step.isEnabled) {
+        stepTime += step.duration;
+      }
+    }
+    return stepTime * cycles;
+  }
+}
+
 // 可編輯的 PCR 步驟，包含控制器和 UI 資訊
 class EditablePcrStep {
   final String id;
-  final String name;
+  String name;
   final String subtitle;
   final IconData icon;
-  final bool isCyclic; // 是否為循環步驟
-  final bool isOptional; // 是否為可選步驟
   final TextEditingController tempController;
   final TextEditingController timeController;
   bool isEnabled;
@@ -1804,19 +1872,24 @@ class EditablePcrStep {
     required this.icon,
     required double temperature,
     required int duration,
-    this.isCyclic = false,
-    this.isOptional = false,
     this.isEnabled = true,
   }) : id = id ?? DateTime.now().millisecondsSinceEpoch.toString() + name.hashCode.toString(),
        tempController = TextEditingController(text: temperature.toStringAsFixed(1)),
        timeController = TextEditingController(text: duration.toString());
   
+  // 獲取溫度值
+  double get temperature => double.tryParse(tempController.text) ?? 0.0;
+  
+  // 獲取時間值
+  int get duration => int.tryParse(timeController.text) ?? 0;
+  
   // 獲取 PcrStep 對象
   PcrStep toPcrStep() {
     return PcrStep(
+      id: id,
       name: name,
-      temperature: double.tryParse(tempController.text) ?? 0.0,
-      duration: int.tryParse(timeController.text) ?? 0,
+      temperature: temperature,
+      duration: duration,
       isEnabled: isEnabled,
     );
   }
@@ -1825,17 +1898,14 @@ class EditablePcrStep {
   factory EditablePcrStep.fromPcrStep(PcrStep step, {
     required String subtitle,
     required IconData icon,
-    bool isCyclic = false,
-    bool isOptional = false,
   }) {
     return EditablePcrStep(
+      id: step.id,
       name: step.name,
       subtitle: subtitle,
       icon: icon,
       temperature: step.temperature,
       duration: step.duration,
-      isCyclic: isCyclic,
-      isOptional: isOptional,
       isEnabled: step.isEnabled,
     );
   }
@@ -1846,46 +1916,121 @@ class EditablePcrStep {
   }
 }
 
+// 可編輯的 PCR Stage
+class EditablePcrStage {
+  final String id;
+  String name;
+  final TextEditingController cyclesController;
+  List<EditablePcrStep> steps;
+  bool isEnabled;
+  
+  EditablePcrStage({
+    String? id,
+    required this.name,
+    required int cycles,
+    required this.steps,
+    this.isEnabled = true,
+  }) : id = id ?? DateTime.now().millisecondsSinceEpoch.toString() + name.hashCode.toString(),
+       cyclesController = TextEditingController(text: cycles.toString());
+  
+  // 獲取循環次數
+  int get cycles => int.tryParse(cyclesController.text) ?? 1;
+  
+  // 獲取 PcrStage 對象
+  PcrStage toPcrStage() {
+    return PcrStage(
+      id: id,
+      name: name,
+      cycles: cycles,
+      steps: steps.map((s) => s.toPcrStep()).toList(),
+      isEnabled: isEnabled,
+    );
+  }
+  
+  // 從 PcrStage 創建 EditablePcrStage
+  factory EditablePcrStage.fromPcrStage(PcrStage stage) {
+    return EditablePcrStage(
+      id: stage.id,
+      name: stage.name,
+      cycles: stage.cycles,
+      steps: stage.steps.map((step) => EditablePcrStep.fromPcrStep(
+        step,
+        subtitle: _getStepSubtitle(step.name),
+        icon: _getStepIcon(step.name),
+      )).toList(),
+      isEnabled: stage.isEnabled,
+    );
+  }
+  
+  void dispose() {
+    cyclesController.dispose();
+    for (var step in steps) {
+      step.dispose();
+    }
+  }
+  
+  static String _getStepSubtitle(String stepName) {
+    switch (stepName.toLowerCase()) {
+      case 'initial denaturation':
+        return 'One-time step at the beginning';
+      case 'denaturation':
+        return 'Separate DNA strands';
+      case 'annealing':
+        return 'Primer binding';
+      case 'extension':
+        return 'DNA synthesis';
+      case 'final extension':
+        return 'Complete incomplete products';
+      case 'hold':
+        return 'Hold temperature';
+      default:
+        return 'PCR step';
+    }
+  }
+  
+  static IconData _getStepIcon(String stepName) {
+    switch (stepName.toLowerCase()) {
+      case 'initial denaturation':
+        return CupertinoIcons.flame;
+      case 'denaturation':
+        return CupertinoIcons.flame_fill;
+      case 'annealing':
+        return CupertinoIcons.link;
+      case 'extension':
+        return CupertinoIcons.arrow_right_circle_fill;
+      case 'final extension':
+        return CupertinoIcons.checkmark_circle_fill;
+      case 'hold':
+        return CupertinoIcons.pause_circle;
+      default:
+        return CupertinoIcons.circle;
+    }
+  }
+}
+
+// PCR Protocol 資料結構
 class PcrProtocol {
   final String name;
-  final PcrStep initialDenaturation;
-  final PcrStep denaturation;
-  final PcrStep annealing;
-  final PcrStep extension;
-  final PcrStep finalExtension;
-  final int cycles;
+  final List<PcrStage> stages;
   
   PcrProtocol({
     required this.name,
-    required this.initialDenaturation,
-    required this.denaturation,
-    required this.annealing,
-    required this.extension,
-    required this.finalExtension,
-    required this.cycles,
+    required this.stages,
   });
   
   Map<String, dynamic> toJson() {
     return {
       'name': name,
-      'initialDenaturation': initialDenaturation.toJson(),
-      'denaturation': denaturation.toJson(),
-      'annealing': annealing.toJson(),
-      'extension': extension.toJson(),
-      'finalExtension': finalExtension.toJson(),
-      'cycles': cycles,
+      'stages': stages.map((s) => s.toJson()).toList(),
     };
   }
   
   factory PcrProtocol.fromJson(Map<String, dynamic> json) {
     return PcrProtocol(
       name: json['name'] ?? '',
-      initialDenaturation: PcrStep.fromJson(json['initialDenaturation'] ?? {}),
-      denaturation: PcrStep.fromJson(json['denaturation'] ?? {}),
-      annealing: PcrStep.fromJson(json['annealing'] ?? {}),
-      extension: PcrStep.fromJson(json['extension'] ?? {}),
-      finalExtension: PcrStep.fromJson(json['finalExtension'] ?? {}),
-      cycles: json['cycles'] ?? 30,
+      stages: (json['stages'] as List? ?? [])
+          .map((s) => PcrStage.fromJson(s as Map<String, dynamic>))
+          .toList(),
     );
   }
   
@@ -1893,21 +2038,17 @@ class PcrProtocol {
   double getTotalTime() {
     double totalSeconds = 0;
     
-    if (initialDenaturation.isEnabled) {
-      totalSeconds += initialDenaturation.duration;
-    }
-    
-    // 循環步驟
-    totalSeconds += (denaturation.duration + annealing.duration + extension.duration) * cycles;
-    
-    if (finalExtension.isEnabled) {
-      totalSeconds += finalExtension.duration;
+    for (var stage in stages) {
+      if (stage.isEnabled) {
+        totalSeconds += stage.getTotalTime();
+      }
     }
     
     return totalSeconds / 60.0; // 轉換為分鐘
   }
 }
 
+// PCR Reaction 頁面
 class PcrReactionPage extends StatefulWidget {
   final bool isDarkMode;
   final VoidCallback onToggleTheme;
@@ -1924,158 +2065,189 @@ class PcrReactionPage extends StatefulWidget {
 
 class _PcrReactionPageState extends State<PcrReactionPage> {
   final TextEditingController _protocolNameController = TextEditingController();
-  final TextEditingController _cyclesController = TextEditingController(text: '30');
   
-  String _currentProtocolName = 'Standard PCR Protocol';
+  final String _currentProtocolName = 'Standard PCR Protocol';
   bool _isEditMode = false;
   
-  // 可編輯的步驟列表
-  List<EditablePcrStep> _steps = [];
+  // 可編輯的 Stage 列表
+  final List<EditablePcrStage> _stages = [];
+  
+  // 拖拽相關的狀態 (預留給未來的拖拽功能)
+  // int? _draggedStageIndex;
+  // int? _draggedStepIndex;  
+  // String? _draggedStepStageId;
   
   @override
   void initState() {
     super.initState();
     _protocolNameController.text = _currentProtocolName;
-    _initializeDefaultSteps();
+    _initializeDefaultStages();
   }
   
   @override
   void dispose() {
     _protocolNameController.dispose();
-    _cyclesController.dispose();
-    for (var step in _steps) {
-      step.dispose();
+    for (var stage in _stages) {
+      stage.dispose();
     }
     super.dispose();
   }
   
-  void _initializeDefaultSteps() {
-    _steps.clear();
+  void _initializeDefaultStages() {
+    _stages.clear();
     
-    // 初始變性步驟（可選）
-    _steps.add(EditablePcrStep(
+    // Stage 1: Initial Denaturation
+    _stages.add(EditablePcrStage(
       name: 'Initial Denaturation',
-      subtitle: 'One-time step at the beginning',
-      icon: CupertinoIcons.flame,
-      temperature: 95.0,
-      duration: 300,
-      isOptional: true,
-      isEnabled: true,
+      cycles: 1,
+      steps: [
+        EditablePcrStep(
+          name: 'Initial Denaturation',
+          subtitle: 'One-time step at the beginning',
+          icon: CupertinoIcons.flame,
+          temperature: 95.0,
+          duration: 300,
+        ),
+      ],
     ));
     
-    // 循環步驟
-    _steps.add(EditablePcrStep(
-      name: 'Denaturation',
-      subtitle: 'Separate DNA strands',
-      icon: CupertinoIcons.flame_fill,
-      temperature: 95.0,
-      duration: 30,
-      isCyclic: true,
+    // Stage 2: PCR Cycling
+    _stages.add(EditablePcrStage(
+      name: 'PCR Cycling',
+      cycles: 35,
+      steps: [
+        EditablePcrStep(
+          name: 'Denaturation',
+          subtitle: 'Separate DNA strands',
+          icon: CupertinoIcons.flame_fill,
+          temperature: 95.0,
+          duration: 30,
+        ),
+        EditablePcrStep(
+          name: 'Annealing',
+          subtitle: 'Primer binding',
+          icon: CupertinoIcons.link,
+          temperature: 55.0,
+          duration: 30,
+        ),
+        EditablePcrStep(
+          name: 'Extension',
+          subtitle: 'DNA synthesis',
+          icon: CupertinoIcons.arrow_right_circle_fill,
+          temperature: 72.0,
+          duration: 60,
+        ),
+      ],
     ));
     
-    _steps.add(EditablePcrStep(
-      name: 'Annealing',
-      subtitle: 'Primer binding',
-      icon: CupertinoIcons.link,
-      temperature: 55.0,
-      duration: 30,
-      isCyclic: true,
-    ));
-    
-    _steps.add(EditablePcrStep(
-      name: 'Extension',
-      subtitle: 'DNA synthesis',
-      icon: CupertinoIcons.arrow_right_circle_fill,
-      temperature: 72.0,
-      duration: 60,
-      isCyclic: true,
-    ));
-    
-    // 最終延伸步驟（可選）
-    _steps.add(EditablePcrStep(
-      name: 'Final Extension',
-      subtitle: 'Complete incomplete products',
-      icon: CupertinoIcons.checkmark_circle_fill,
-      temperature: 72.0,
-      duration: 600,
-      isOptional: true,
-      isEnabled: true,
+    // Stage 3: Final Steps
+    _stages.add(EditablePcrStage(
+      name: 'Final Steps',
+      cycles: 1,
+      steps: [
+        EditablePcrStep(
+          name: 'Final Extension',
+          subtitle: 'Complete incomplete products',
+          icon: CupertinoIcons.checkmark_circle_fill,
+          temperature: 72.0,
+          duration: 600,
+        ),
+        EditablePcrStep(
+          name: 'Hold',
+          subtitle: 'Hold temperature',
+          icon: CupertinoIcons.pause_circle,
+          temperature: 4.0,
+          duration: 999999, // Infinite hold
+        ),
+      ],
     ));
   }
   
   PcrProtocol _getCurrentProtocol() {
-    // 找到特定步驟
-    EditablePcrStep? initialDenaturation = _steps.firstWhere(
-      (step) => step.name == 'Initial Denaturation',
-      orElse: () => EditablePcrStep(
-        name: 'Initial Denaturation',
-        subtitle: '',
-        icon: CupertinoIcons.flame,
-        temperature: 95.0,
-        duration: 300,
-        isEnabled: false,
-      ),
-    );
-    
-    EditablePcrStep? denaturation = _steps.firstWhere(
-      (step) => step.name == 'Denaturation' && step.isCyclic,
-      orElse: () => EditablePcrStep(
-        name: 'Denaturation',
-        subtitle: '',
-        icon: CupertinoIcons.flame_fill,
-        temperature: 95.0,
-        duration: 30,
-        isCyclic: true,
-      ),
-    );
-    
-    EditablePcrStep? annealing = _steps.firstWhere(
-      (step) => step.name == 'Annealing' && step.isCyclic,
-      orElse: () => EditablePcrStep(
-        name: 'Annealing',
-        subtitle: '',
-        icon: CupertinoIcons.link,
-        temperature: 55.0,
-        duration: 30,
-        isCyclic: true,
-      ),
-    );
-    
-    EditablePcrStep? extension = _steps.firstWhere(
-      (step) => step.name == 'Extension' && step.isCyclic,
-      orElse: () => EditablePcrStep(
-        name: 'Extension',
-        subtitle: '',
-        icon: CupertinoIcons.arrow_right_circle_fill,
-        temperature: 72.0,
-        duration: 60,
-        isCyclic: true,
-      ),
-    );
-    
-    EditablePcrStep? finalExtension = _steps.firstWhere(
-      (step) => step.name == 'Final Extension',
-      orElse: () => EditablePcrStep(
-        name: 'Final Extension',
-        subtitle: '',
-        icon: CupertinoIcons.checkmark_circle_fill,
-        temperature: 72.0,
-        duration: 600,
-        isEnabled: false,
-      ),
-    );
-    
     return PcrProtocol(
       name: _protocolNameController.text.isNotEmpty ? _protocolNameController.text : 'Unnamed Protocol',
-      cycles: int.tryParse(_cyclesController.text) ?? 30,
-      initialDenaturation: initialDenaturation.toPcrStep(),
-      denaturation: denaturation.toPcrStep(),
-      annealing: annealing.toPcrStep(),
-      extension: extension.toPcrStep(),
-      finalExtension: finalExtension.toPcrStep(),
+      stages: _stages.map((stage) => stage.toPcrStage()).toList(),
     );
   }
   
+  // Stage 操作方法
+  void _addNewStage() {
+    setState(() {
+      _stages.add(EditablePcrStage(
+        name: 'Custom Stage ${_stages.length + 1}',
+        cycles: 1,
+        steps: [
+          EditablePcrStep(
+            name: 'Custom Step',
+            subtitle: 'Custom PCR step',
+            icon: CupertinoIcons.gear_alt,
+            temperature: 72.0,
+            duration: 30,
+          ),
+        ],
+      ));
+    });
+  }
+  
+  void _deleteStage(int stageIndex) {
+    if (stageIndex >= 0 && stageIndex < _stages.length) {
+      setState(() {
+        _stages[stageIndex].dispose();
+        _stages.removeAt(stageIndex);
+      });
+    }
+  }
+  
+  // 移動 Stage 的方法 (待實現拖拽功能時使用)
+  // void _moveStage(int oldIndex, int newIndex) { ... }
+  
+  void _toggleStageEnabled(int stageIndex) {
+    if (stageIndex >= 0 && stageIndex < _stages.length) {
+      setState(() {
+        _stages[stageIndex].isEnabled = !_stages[stageIndex].isEnabled;
+      });
+    }
+  }
+  
+  // Step 操作方法
+  void _addNewStep(int stageIndex) {
+    if (stageIndex >= 0 && stageIndex < _stages.length) {
+      setState(() {
+        _stages[stageIndex].steps.add(EditablePcrStep(
+          name: 'New Step',
+          subtitle: 'Custom PCR step',
+          icon: CupertinoIcons.gear_alt,
+          temperature: 72.0,
+          duration: 30,
+        ));
+      });
+    }
+  }
+  
+  void _deleteStep(int stageIndex, int stepIndex) {
+    if (stageIndex >= 0 && stageIndex < _stages.length &&
+        stepIndex >= 0 && stepIndex < _stages[stageIndex].steps.length) {
+      setState(() {
+        _stages[stageIndex].steps[stepIndex].dispose();
+        _stages[stageIndex].steps.removeAt(stepIndex);
+      });
+    }
+  }
+  
+  // 移動 Step 的方法 (待實現拖拽功能時使用)
+  // void _moveStep(int fromStageIndex, int fromStepIndex, int toStageIndex, int toStepIndex) { ... }
+  
+  void _toggleStepEnabled(int stageIndex, int stepIndex) {
+    if (stageIndex >= 0 && stageIndex < _stages.length &&
+        stepIndex >= 0 && stepIndex < _stages[stageIndex].steps.length) {
+      setState(() {
+        _stages[stageIndex].steps[stepIndex].isEnabled = 
+            !_stages[stageIndex].steps[stepIndex].isEnabled;
+      });
+    }
+  }
+  
+  // 格式化時間
   String _formatTime(int seconds) {
     if (seconds < 60) {
       return '${seconds}s';
@@ -2098,365 +2270,163 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
     }
   }
   
+  // 複製協議
   void _copyProtocol() {
     final protocol = _getCurrentProtocol();
     final StringBuffer buffer = StringBuffer();
     
     buffer.writeln('Lab Studio - PCR Protocol');
     buffer.writeln('Protocol Name: ${protocol.name}');
-    buffer.writeln('Date: ${_getTodayDate()}');
+    buffer.writeln('Date: ${DateTime.now().toString().split(' ')[0]}');
     buffer.writeln('');
-    buffer.writeln('PCR Cycles: ${protocol.cycles}');
+    buffer.writeln('Total Stages: ${protocol.stages.length}');
     buffer.writeln('Estimated Total Time: ${protocol.getTotalTime().toStringAsFixed(1)} minutes');
     buffer.writeln('');
-    buffer.writeln('Protocol Steps:');
     
-    if (protocol.initialDenaturation.isEnabled) {
-      buffer.writeln('1. Initial Denaturation: ${protocol.initialDenaturation.temperature}°C for ${_formatTime(protocol.initialDenaturation.duration)}');
-    }
-    
-    buffer.writeln('2. Cyclic Steps (${protocol.cycles} cycles):');
-    buffer.writeln('   - Denaturation: ${protocol.denaturation.temperature}°C for ${_formatTime(protocol.denaturation.duration)}');
-    buffer.writeln('   - Annealing: ${protocol.annealing.temperature}°C for ${_formatTime(protocol.annealing.duration)}');
-    buffer.writeln('   - Extension: ${protocol.extension.temperature}°C for ${_formatTime(protocol.extension.duration)}');
-    
-    if (protocol.finalExtension.isEnabled) {
-      buffer.writeln('3. Final Extension: ${protocol.finalExtension.temperature}°C for ${_formatTime(protocol.finalExtension.duration)}');
+    for (int i = 0; i < protocol.stages.length; i++) {
+      final stage = protocol.stages[i];
+      if (stage.isEnabled) {
+        buffer.writeln('Stage ${i + 1}: ${stage.name} (${stage.cycles} cycles)');
+        for (int j = 0; j < stage.steps.length; j++) {
+          final step = stage.steps[j];
+          if (step.isEnabled) {
+            buffer.writeln('  Step ${j + 1}: ${step.name} - ${step.temperature}°C for ${_formatTime(step.duration)}');
+          }
+        }
+        buffer.writeln('');
+      }
     }
     
     Clipboard.setData(ClipboardData(text: buffer.toString()));
-  }
-  
-  String _getTodayDate() {
-    final now = DateTime.now();
-    return '${now.month.toString().padLeft(2, '0')}/${now.day.toString().padLeft(2, '0')}/${(now.year % 100).toString().padLeft(2, '0')}';
-  }
-  
-  // 新增步驟
-  void _addNewStep() {
-    setState(() {
-      _steps.add(EditablePcrStep(
-        name: 'Custom Step ${_steps.length + 1}',
-        subtitle: 'Custom PCR step',
-        icon: CupertinoIcons.gear_alt,
-        temperature: 72.0,
-        duration: 30,
-        isCyclic: false,
-        isOptional: true,
-        isEnabled: true,
-      ));
-    });
-  }
-  
-  // 刪除步驟
-  void _deleteStep(int index) {
-    if (index >= 0 && index < _steps.length) {
-      setState(() {
-        _steps[index].dispose();
-        _steps.removeAt(index);
-      });
-    }
-  }
-  
-  // 移動步驟
-  void _moveStep(int oldIndex, int newIndex) {
-    if (oldIndex >= 0 && oldIndex < _steps.length && 
-        newIndex >= 0 && newIndex < _steps.length &&
-        oldIndex != newIndex) {
-      setState(() {
-        final step = _steps.removeAt(oldIndex);
-        _steps.insert(newIndex, step);
-      });
-    }
-  }
-  
-  // 切換步驟啟用狀態
-  void _toggleStepEnabled(int index) {
-    if (index >= 0 && index < _steps.length) {
-      setState(() {
-        _steps[index].isEnabled = !_steps[index].isEnabled;
-      });
-    }
-  }
-  
-  // 建立 2-step PCR 協議（合併 annealing 和 extension）
-  void _create2StepProtocol() {
-    setState(() {
-      _steps.clear();
-      
-      // 初始變性（可選）
-      _steps.add(EditablePcrStep(
-        name: 'Initial Denaturation',
-        subtitle: 'One-time step at the beginning',
-        icon: CupertinoIcons.flame,
-        temperature: 95.0,
-        duration: 300,
-        isOptional: true,
-        isEnabled: true,
-      ));
-      
-      // 變性
-      _steps.add(EditablePcrStep(
-        name: 'Denaturation',
-        subtitle: 'Separate DNA strands',
-        icon: CupertinoIcons.flame_fill,
-        temperature: 95.0,
-        duration: 30,
-        isCyclic: true,
-      ));
-      
-      // 退火+延伸
-      _steps.add(EditablePcrStep(
-        name: 'Annealing/Extension',
-        subtitle: 'Primer binding and DNA synthesis',
-        icon: CupertinoIcons.arrow_right_circle_fill,
-        temperature: 60.0,
-        duration: 90,
-        isCyclic: true,
-      ));
-      
-      // 最終延伸（可選）
-      _steps.add(EditablePcrStep(
-        name: 'Final Extension',
-        subtitle: 'Complete incomplete products',
-        icon: CupertinoIcons.checkmark_circle_fill,
-        temperature: 72.0,
-        duration: 600,
-        isOptional: true,
-        isEnabled: true,
-      ));
-    });
-  }
-  
-  // 重設為標準 3-step PCR
-  void _createStandardProtocol() {
-    setState(() {
-      _initializeDefaultSteps();
-    });
   }
   
   // 清除所有輸入
   void _clearAllInputs() {
     setState(() {
       _protocolNameController.text = 'Standard PCR Protocol';
-      _cyclesController.text = '30';
-      _initializeDefaultSteps();
+      // 清理舊的 stages
+      for (var stage in _stages) {
+        stage.dispose();
+      }
+      _initializeDefaultStages();
     });
   }
   
-  Widget _buildEditableStepCard(EditablePcrStep step, int index) {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 4.0),
-      child: _isEditMode ? _buildDraggableStepItem(step, index) : _buildDisplayStepCard(step, index),
-    );
+  // 創建標準 3-step 協議
+  void _createStandardProtocol() {
+    setState(() {
+      for (var stage in _stages) {
+        stage.dispose();
+      }
+      _initializeDefaultStages();
+    });
   }
   
-  Widget _buildDisplayStepCard(EditablePcrStep step, int index) {
+  // 創建 2-step 協議
+  void _create2StepProtocol() {
+    setState(() {
+      for (var stage in _stages) {
+        stage.dispose();
+      }
+      _stages.clear();
+      
+      // Stage 1: Initial Denaturation
+      _stages.add(EditablePcrStage(
+        name: 'Initial Denaturation',
+        cycles: 1,
+        steps: [
+          EditablePcrStep(
+            name: 'Initial Denaturation',
+            subtitle: 'One-time step at the beginning',
+            icon: CupertinoIcons.flame,
+            temperature: 95.0,
+            duration: 300,
+          ),
+        ],
+      ));
+      
+      // Stage 2: PCR Cycling (2-step)
+      _stages.add(EditablePcrStage(
+        name: 'PCR Cycling',
+        cycles: 35,
+        steps: [
+          EditablePcrStep(
+            name: 'Denaturation',
+            subtitle: 'Separate DNA strands',
+            icon: CupertinoIcons.flame_fill,
+            temperature: 95.0,
+            duration: 30,
+          ),
+          EditablePcrStep(
+            name: 'Annealing/Extension',
+            subtitle: 'Primer binding and DNA synthesis',
+            icon: CupertinoIcons.arrow_right_circle_fill,
+            temperature: 60.0,
+            duration: 90,
+          ),
+        ],
+      ));
+      
+      // Stage 3: Final Steps
+      _stages.add(EditablePcrStage(
+        name: 'Final Steps',
+        cycles: 1,
+        steps: [
+          EditablePcrStep(
+            name: 'Final Extension',
+            subtitle: 'Complete incomplete products',
+            icon: CupertinoIcons.checkmark_circle_fill,
+            temperature: 72.0,
+            duration: 600,
+          ),
+          EditablePcrStep(
+            name: 'Hold',
+            subtitle: 'Hold temperature',
+            icon: CupertinoIcons.pause_circle,
+            temperature: 4.0,
+            duration: 999999,
+          ),
+        ],
+      ));
+    });
+  }
+  
+  // UI 建構方法
+  Widget _buildStageCard(EditablePcrStage stage, int stageIndex) {
     return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8.0),
       decoration: BoxDecoration(
         color: widget.isDarkMode 
             ? CupertinoColors.systemGrey6.darkColor
             : CupertinoColors.systemBackground,
         borderRadius: BorderRadius.circular(12.0),
         border: Border.all(
-          color: CupertinoColors.separator,
+          color: stage.isEnabled 
+              ? CupertinoColors.separator
+              : CupertinoColors.systemGrey4,
           width: 0.5,
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 標題行
+          // Stage 標題行
           Container(
-            padding: const EdgeInsets.fromLTRB(16.0, 12.0, 16.0, 8.0),
+            padding: const EdgeInsets.all(16.0),
             child: Row(
               children: [
-                Icon(
-                  step.icon,
-                  color: step.isEnabled 
-                      ? CupertinoColors.systemBlue 
-                      : CupertinoColors.systemGrey,
-                  size: 20,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        step.name,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: step.isEnabled
-                              ? (widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black)
-                              : CupertinoColors.systemGrey,
-                        ),
-                      ),
-                      if (step.subtitle.isNotEmpty)
-                        Text(
-                          step.subtitle,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: CupertinoColors.secondaryLabel,
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-                if (step.isOptional)
-                  Transform.scale(
-                    scale: 0.8,
-                    child: CupertinoSwitch(
-                      value: step.isEnabled,
-                      onChanged: (value) => _toggleStepEnabled(index),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          // 參數顯示行
-          if (step.isEnabled)
-            Container(
-              padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 16.0),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Temperature: ${step.tempController.text}°C',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: CupertinoColors.secondaryLabel,
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: Text(
-                      'Time: ${_formatTime(int.tryParse(step.timeController.text) ?? 0)}',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: CupertinoColors.secondaryLabel,
-                      ),
-                      textAlign: TextAlign.end,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-  
-  Widget _buildDraggableStepItem(EditablePcrStep step, int index) {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 4.0),
-      child: DragTarget<int>(
-        onWillAcceptWithDetails: (details) {
-          return details.data != index;
-        },
-        onAcceptWithDetails: (details) {
-          if (details.data != index) {
-            _moveStep(details.data, index);
-          }
-        },
-        builder: (context, candidateData, rejectedData) {
-          bool isHighlighted = candidateData.isNotEmpty;
-          
-          return AnimatedContainer(
-            duration: const Duration(milliseconds: 150),
-            decoration: BoxDecoration(
-              color: isHighlighted
-                  ? CupertinoColors.systemBlue.withOpacity(0.1)
-                  : (widget.isDarkMode 
-                      ? CupertinoColors.systemGrey6.darkColor
-                      : CupertinoColors.systemBackground),
-              borderRadius: BorderRadius.circular(12.0),
-              border: Border.all(
-                color: isHighlighted 
-                    ? CupertinoColors.systemBlue
-                    : CupertinoColors.separator,
-                width: isHighlighted ? 2.0 : 0.5,
-              ),
-            ),
-            child: Dismissible(
-              key: ValueKey(step.id),
-              direction: DismissDirection.endToStart,
-              dismissThresholds: const {
-                DismissDirection.endToStart: 0.6,
-              },
-              confirmDismiss: (direction) async {
-                return await _showDeleteStepConfirmation(step.name);
-              },
-              onDismissed: (direction) {
-                _deleteStep(index);
-              },
-              background: Container(
-                decoration: BoxDecoration(
-                  color: CupertinoColors.destructiveRed,
-                  borderRadius: BorderRadius.circular(12.0),
-                ),
-                alignment: Alignment.centerRight,
-                padding: const EdgeInsets.only(right: 20.0),
-                child: const Icon(
-                  CupertinoIcons.delete,
-                  color: CupertinoColors.white,
-                  size: 24,
-                ),
-              ),
-              child: Row(
-                children: [
-                  // 拖拽手柄 - 只有這個區域可以觸發拖拽
-                  Draggable<int>(
-                    data: index,
-                    feedback: Material(
-                      color: Colors.transparent,
-                      child: Container(
-                        width: MediaQuery.of(context).size.width - 32,
-                        decoration: BoxDecoration(
-                          color: widget.isDarkMode 
-                              ? CupertinoColors.systemGrey6.darkColor
-                              : CupertinoColors.systemBackground,
-                          borderRadius: BorderRadius.circular(12.0),
-                          border: Border.all(
-                            color: CupertinoColors.systemBlue,
-                            width: 2.0,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: CupertinoColors.systemBlue.withOpacity(0.4),
-                              blurRadius: 12,
-                              offset: const Offset(0, 6),
-                            ),
-                          ],
-                        ),
-                        child: _buildStepFeedbackContent(step),
-                      ),
-                    ),
-                    childWhenDragging: Container(
-                      width: 50,
-                      height: 120,
-                      decoration: BoxDecoration(
-                        color: CupertinoColors.systemGrey4.withOpacity(0.3),
-                        borderRadius: BorderRadius.circular(12.0),
-                        border: Border.all(
-                          color: CupertinoColors.systemGrey3,
-                          width: 1.0,
-                          style: BorderStyle.solid,
-                        ),
-                      ),
-                      child: const Icon(
-                        CupertinoIcons.bars,
-                        color: CupertinoColors.systemGrey2,
-                        size: 20,
-                      ),
-                    ),
-                    onDragStarted: () {
+                // 拖拽手柄（編輯模式）
+                if (_isEditMode) ...[
+                  GestureDetector(
+                    onPanStart: (details) {
+                      // _draggedStageIndex = stageIndex; // 待實現
                       HapticFeedback.mediumImpact();
                     },
+                    onPanEnd: (details) {
+                      // _draggedStageIndex = null; // 待實現
+                    },
                     child: Container(
-                      width: 50,
-                      padding: const EdgeInsets.symmetric(vertical: 16.0),
+                      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0),
                       child: const Icon(
                         CupertinoIcons.bars,
                         color: CupertinoColors.systemGrey,
@@ -2464,266 +2434,307 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
                       ),
                     ),
                   ),
-                  // 步驟內容 - 這個區域不會觸發拖拽
-                  Expanded(
-                    child: _buildEditableStepContent(step, index),
-                  ),
+                  const SizedBox(width: 8),
                 ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildStepFeedbackContent(EditablePcrStep step) {
-    return Row(
-      children: [
-        Container(
-          width: 50,
-          padding: const EdgeInsets.symmetric(vertical: 16.0),
-          child: const Icon(
-            CupertinoIcons.bars,
-            color: CupertinoColors.systemBlue,
-            size: 20,
-          ),
-        ),
-        Expanded(
-          child: Container(
-            padding: const EdgeInsets.fromLTRB(0, 16.0, 16.0, 16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      step.icon,
-                      color: step.isEnabled 
-                          ? CupertinoColors.systemBlue 
-                          : CupertinoColors.systemGrey,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      step.name,
-                      style: TextStyle(
-                        color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 16,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (_isEditMode)
+                        CupertinoTextField(
+                          controller: TextEditingController(text: stage.name),
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
+                          ),
+                          decoration: BoxDecoration(
+                            color: widget.isDarkMode 
+                                ? CupertinoColors.systemGrey5.darkColor
+                                : CupertinoColors.tertiarySystemBackground,
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
+                          onChanged: (value) {
+                            setState(() {
+                              stage.name = value;
+                            });
+                          },
+                        )
+                      else
+                        Text(
+                          stage.name,
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: stage.isEnabled
+                                ? (widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black)
+                                : CupertinoColors.systemGrey,
+                          ),
+                        ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Text(
+                            'Cycles: ',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: CupertinoColors.secondaryLabel,
+                            ),
+                          ),
+                          if (_isEditMode)
+                            SizedBox(
+                              width: 80,
+                              child: CupertinoTextField(
+                                controller: stage.cyclesController,
+                                keyboardType: TextInputType.number,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: widget.isDarkMode 
+                                      ? CupertinoColors.systemGrey5.darkColor
+                                      : CupertinoColors.tertiarySystemBackground,
+                                  borderRadius: BorderRadius.circular(6.0),
+                                ),
+                                padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
+                                onChanged: (value) => setState(() {}),
+                              ),
+                            )
+                          else
+                            Text(
+                              stage.cyclesController.text,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: stage.isEnabled
+                                    ? (widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black)
+                                    : CupertinoColors.systemGrey,
+                              ),
+                            ),
+                          const Spacer(),
+                          if (_isEditMode) ...[
+                            // 新增 Step 按鈕
+                            CupertinoButton(
+                              padding: EdgeInsets.zero,
+                              onPressed: () => _addNewStep(stageIndex),
+                              child: const Icon(
+                                CupertinoIcons.add_circled,
+                                color: CupertinoColors.systemBlue,
+                                size: 20,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            // 刪除 Stage 按鈕
+                            CupertinoButton(
+                              padding: EdgeInsets.zero,
+                              onPressed: () => _deleteStage(stageIndex),
+                              child: const Icon(
+                                CupertinoIcons.delete,
+                                color: CupertinoColors.destructiveRed,
+                                size: 20,
+                              ),
+                            ),
+                          ],
+                          // 啟用/停用開關
+                          Transform.scale(
+                            scale: 0.8,
+                            child: CupertinoSwitch(
+                              value: stage.isEnabled,
+                              onChanged: (value) => _toggleStageEnabled(stageIndex),
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${step.tempController.text}°C - ${step.timeController.text}s',
-                  style: TextStyle(
-                    color: CupertinoColors.secondaryLabel,
-                    fontSize: 14,
+                    ],
                   ),
                 ),
               ],
             ),
           ),
-        ),
-      ],
-    );
-  }
-  
-  Widget _buildEditableStepContent(EditablePcrStep step, int index) {
-    return Container(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 標題和開關
-          Row(
-            children: [
-              Icon(
-                step.icon,
-                color: step.isEnabled 
-                    ? CupertinoColors.systemBlue 
-                    : CupertinoColors.systemGrey,
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: CupertinoTextField(
-                  placeholder: 'Step Name',
-                  style: TextStyle(
-                    color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  placeholderStyle: TextStyle(color: CupertinoColors.placeholderText),
-                  decoration: BoxDecoration(
-                    color: widget.isDarkMode 
-                        ? CupertinoColors.systemGrey5.darkColor
-                        : CupertinoColors.tertiarySystemBackground,
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
-                  padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
-                  onChanged: (value) {
-                    setState(() {
-                      // 更新步驟名稱（直接修改 step.name 無法生效，因為是 final）
-                      // 這裡暫時不做任何操作，因為步驟名稱是 final 的
-                    });
-                  },
-                  controller: TextEditingController(text: step.name)..selection = TextSelection.collapsed(offset: step.name.length),
-                ),
-              ),
-              const SizedBox(width: 8),
-              if (step.isOptional)
-                Transform.scale(
-                  scale: 0.8,
-                  child: CupertinoSwitch(
-                    value: step.isEnabled,
-                    onChanged: (value) => _toggleStepEnabled(index),
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          // 溫度和時間設定
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Temperature (°C)',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: CupertinoColors.secondaryLabel,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    CupertinoTextField(
-                      controller: step.tempController,
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [BankStyleDecimalFormatter(decimalPlaces: 1, maxDigits: 4)],
-                      style: TextStyle(color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
-                      decoration: BoxDecoration(
-                        color: widget.isDarkMode 
-                            ? CupertinoColors.systemGrey5.darkColor
-                            : CupertinoColors.tertiarySystemBackground,
-                        borderRadius: BorderRadius.circular(8.0),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
-                      onChanged: (value) => setState(() {}),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Time (seconds)',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: CupertinoColors.secondaryLabel,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    CupertinoTextField(
-                      controller: step.timeController,
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [BankStyleIntegerFormatter(maxDigits: 5)],
-                      style: TextStyle(color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
-                      decoration: BoxDecoration(
-                        color: widget.isDarkMode 
-                            ? CupertinoColors.systemGrey5.darkColor
-                            : CupertinoColors.tertiarySystemBackground,
-                        borderRadius: BorderRadius.circular(8.0),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
-                      onChanged: (value) => setState(() {}),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          // 步驟類型標籤
-          Row(
-            children: [
-              if (step.isCyclic)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                  decoration: BoxDecoration(
-                    color: CupertinoColors.systemBlue.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12.0),
-                  ),
-                  child: Text(
-                    'Cyclic',
-                    style: TextStyle(
-                      color: CupertinoColors.systemBlue,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              if (step.isOptional)
-                Container(
-                  margin: EdgeInsets.only(left: step.isCyclic ? 8.0 : 0),
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                  decoration: BoxDecoration(
-                    color: CupertinoColors.systemOrange.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12.0),
-                  ),
-                  child: Text(
-                    'Optional',
-                    style: TextStyle(
-                      color: CupertinoColors.systemOrange,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-            ],
-          ),
+          // Steps
+          if (stage.isEnabled)
+            ...List.generate(stage.steps.length, (stepIndex) {
+              return _buildStepCard(stage.steps[stepIndex], stageIndex, stepIndex);
+            }),
         ],
       ),
     );
   }
   
-  Future<bool?> _showDeleteStepConfirmation(String stepName) async {
-    return await showCupertinoDialog<bool>(
-      context: context,
-      builder: (BuildContext context) {
-        return CupertinoAlertDialog(
-          title: Text(
-            'Delete Step',
-            style: TextStyle(color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
-          ),
-          content: Text(
-            'Are you sure you want to delete "$stepName"?',
-            style: TextStyle(color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
-          ),
-          actions: [
-            CupertinoDialogAction(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: Text(
-                'Cancel',
-                style: TextStyle(color: CupertinoColors.systemBlue),
+  Widget _buildStepCard(EditablePcrStep step, int stageIndex, int stepIndex) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 8.0),
+      padding: const EdgeInsets.all(12.0),
+      decoration: BoxDecoration(
+        color: widget.isDarkMode 
+            ? CupertinoColors.systemGrey5.darkColor
+            : CupertinoColors.tertiarySystemBackground,
+        borderRadius: BorderRadius.circular(8.0),
+      ),
+      child: Row(
+        children: [
+          // 拖拽手柄（編輯模式）
+          if (_isEditMode) ...[
+            GestureDetector(
+              onPanStart: (details) {
+                // _draggedStepIndex = stepIndex; // 待實現
+                // _draggedStepStageId = _stages[stageIndex].id; // 待實現
+                HapticFeedback.lightImpact();
+              },
+              onPanEnd: (details) {
+                // _draggedStepIndex = null; // 待實現
+                // _draggedStepStageId = null; // 待實現
+              },
+              child: Container(
+                padding: const EdgeInsets.all(4.0),
+                child: const Icon(
+                  CupertinoIcons.bars,
+                  color: CupertinoColors.systemGrey,
+                  size: 16,
+                ),
               ),
             ),
-            CupertinoDialogAction(
-              isDestructiveAction: true,
-              onPressed: () => Navigator.of(context).pop(true),
-              child: Text(
-                'Delete',
-                style: TextStyle(color: CupertinoColors.destructiveRed),
+            const SizedBox(width: 8),
+          ],
+          // Step 圖示
+          Icon(
+            step.icon,
+            color: step.isEnabled 
+                ? CupertinoColors.systemBlue 
+                : CupertinoColors.systemGrey,
+            size: 18,
+          ),
+          const SizedBox(width: 8),
+          // Step 內容
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (_isEditMode)
+                  CupertinoTextField(
+                    controller: TextEditingController(text: step.name),
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
+                    ),
+                    decoration: BoxDecoration(
+                      color: widget.isDarkMode 
+                          ? CupertinoColors.systemGrey6.darkColor
+                          : CupertinoColors.systemBackground,
+                      borderRadius: BorderRadius.circular(6.0),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
+                    onChanged: (value) {
+                      setState(() {
+                        step.name = value;
+                      });
+                    },
+                  )
+                else
+                  Text(
+                    step.name,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: step.isEnabled
+                          ? (widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black)
+                          : CupertinoColors.systemGrey,
+                    ),
+                  ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    // 溫度
+                    if (_isEditMode)
+                      SizedBox(
+                        width: 70,
+                        child: CupertinoTextField(
+                          controller: step.tempController,
+                          keyboardType: TextInputType.number,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
+                          ),
+                          decoration: BoxDecoration(
+                            color: widget.isDarkMode 
+                                ? CupertinoColors.systemGrey6.darkColor
+                                : CupertinoColors.systemBackground,
+                            borderRadius: BorderRadius.circular(4.0),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 2.0, horizontal: 6.0),
+                          suffix: Text('°C', style: TextStyle(fontSize: 10, color: CupertinoColors.secondaryLabel)),
+                          onChanged: (value) => setState(() {}),
+                        ),
+                      )
+                    else
+                      Text(
+                        '${step.tempController.text}°C',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: CupertinoColors.secondaryLabel,
+                        ),
+                      ),
+                    const SizedBox(width: 12),
+                    // 時間
+                    if (_isEditMode)
+                      SizedBox(
+                        width: 80,
+                        child: CupertinoTextField(
+                          controller: step.timeController,
+                          keyboardType: TextInputType.number,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
+                          ),
+                          decoration: BoxDecoration(
+                            color: widget.isDarkMode 
+                                ? CupertinoColors.systemGrey6.darkColor
+                                : CupertinoColors.systemBackground,
+                            borderRadius: BorderRadius.circular(4.0),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 2.0, horizontal: 6.0),
+                          suffix: Text('s', style: TextStyle(fontSize: 10, color: CupertinoColors.secondaryLabel)),
+                          onChanged: (value) => setState(() {}),
+                        ),
+                      )
+                    else
+                      Text(
+                        _formatTime(int.tryParse(step.timeController.text) ?? 0),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: CupertinoColors.secondaryLabel,
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          // 控制按鈕
+          if (_isEditMode) ...[
+            const SizedBox(width: 8),
+            CupertinoButton(
+              padding: EdgeInsets.zero,
+              onPressed: () => _deleteStep(stageIndex, stepIndex),
+              child: const Icon(
+                CupertinoIcons.delete,
+                color: CupertinoColors.destructiveRed,
+                size: 16,
               ),
             ),
           ],
-        );
-      },
+          // 啟用/停用開關
+          Transform.scale(
+            scale: 0.7,
+            child: CupertinoSwitch(
+              value: step.isEnabled,
+              onChanged: (value) => _toggleStepEnabled(stageIndex, stepIndex),
+            ),
+          ),
+        ],
+      ),
     );
   }
   
@@ -2817,7 +2828,7 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'PCR Cycles',
+                                'Total Stages',
                                 style: TextStyle(
                                   color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
                                   fontSize: 14,
@@ -2825,19 +2836,22 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
                                 ),
                               ),
                               const SizedBox(height: 6),
-                              CupertinoTextField(
-                                controller: _cyclesController,
-                                keyboardType: TextInputType.number,
-                                inputFormatters: [BankStyleIntegerFormatter(maxDigits: 2)],
-                                style: TextStyle(color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
+                              Container(
+                                padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 12.0),
                                 decoration: BoxDecoration(
                                   color: widget.isDarkMode 
                                       ? CupertinoColors.systemGrey5.darkColor
-                                      : CupertinoColors.tertiarySystemBackground,
+                                      : CupertinoColors.systemGrey6,
                                   borderRadius: BorderRadius.circular(8.0),
                                 ),
-                                padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 12.0),
-                                onChanged: (value) => setState(() {}),
+                                child: Text(
+                                  '${protocol.stages.length}',
+                                  style: TextStyle(
+                                    color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
                               ),
                             ],
                           ),
@@ -2860,7 +2874,7 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
                                 padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 12.0),
                                 decoration: BoxDecoration(
                                   color: widget.isDarkMode 
-                                      ? CupertinoColors.systemGrey6.darkColor
+                                      ? CupertinoColors.systemGrey5.darkColor
                                       : CupertinoColors.systemGrey6,
                                   borderRadius: BorderRadius.circular(8.0),
                                 ),
@@ -2907,12 +2921,12 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
               ),
               const SizedBox(height: 16),
               
-              // PCR 步驟設定標題和編輯模式按鈕
+              // PCR Stages 設定標題和編輯模式按鈕
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'PCR Steps',
+                    'PCR Stages',
                     style: CupertinoTheme.of(context).textTheme.navLargeTitleTextStyle.copyWith(
                       fontSize: 18,
                       color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
@@ -2921,7 +2935,7 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
                   if (_isEditMode)
                     CupertinoButton(
                       padding: EdgeInsets.zero,
-                      onPressed: _addNewStep,
+                      onPressed: _addNewStage,
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -2932,7 +2946,7 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            'Add Step',
+                            'Add Stage',
                             style: TextStyle(
                               color: CupertinoColors.systemBlue,
                               fontSize: 16,
@@ -2945,42 +2959,9 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
               ),
               const SizedBox(height: 8),
               
-              // 步驟列表
-              ...List.generate(_steps.length, (index) {
-                final step = _steps[index];
-                return Column(
-                  children: [
-                    // 如果是循環步驟的第一個，顯示循環標題
-                    if (step.isCyclic && (index == 0 || !_steps[index - 1].isCyclic))
-                      Container(
-                        margin: const EdgeInsets.fromLTRB(0, 8, 0, 8),
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                        decoration: BoxDecoration(
-                          color: CupertinoColors.systemBlue.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8.0),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              CupertinoIcons.repeat,
-                              color: CupertinoColors.systemBlue,
-                              size: 18,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Cyclic Steps (${protocol.cycles} cycles)',
-                              style: TextStyle(
-                                color: CupertinoColors.systemBlue,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    _buildEditableStepCard(step, index),
-                  ],
-                );
+              // Stages 列表
+              ...List.generate(_stages.length, (index) {
+                return _buildStageCard(_stages[index], index);
               }),
               
               const SizedBox(height: 32),
@@ -3070,7 +3051,10 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
                       onTap: () {
                         Navigator.of(context).pop();
                         setState(() {
-                          _steps.clear();
+                          for (var stage in _stages) {
+                            stage.dispose();
+                          }
+                          _stages.clear();
                           _isEditMode = true;
                         });
                       },
@@ -3123,6 +3107,147 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
   }
 }
 
+// Settings Page
+class SettingsPage extends StatelessWidget {
+  final bool isDarkMode;
+  final VoidCallback onToggleTheme;
+  final bool isExperimentTrackingMode;
+  final VoidCallback onToggleExperimentTracking;
+  final int trackingDisplayMode;
+  final Function(int) onSetTrackingDisplayMode;
+
+  const SettingsPage({
+    super.key,
+    required this.isDarkMode,
+    required this.onToggleTheme,
+    required this.isExperimentTrackingMode,
+    required this.onToggleExperimentTracking,
+    required this.trackingDisplayMode,
+    required this.onSetTrackingDisplayMode,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.6,
+      decoration: BoxDecoration(
+        color: isDarkMode 
+            ? CupertinoColors.systemGrey6.darkColor
+            : CupertinoColors.systemBackground,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Column(
+        children: [
+          // 頂部拖動條
+          Container(
+            width: 36,
+            height: 5,
+            margin: const EdgeInsets.symmetric(vertical: 12),
+            decoration: BoxDecoration(
+              color: CupertinoColors.quaternaryLabel,
+              borderRadius: BorderRadius.circular(2.5),
+            ),
+          ),
+          // 標題
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Settings',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                    color: isDarkMode ? CupertinoColors.white : CupertinoColors.black,
+                  ),
+                ),
+                CupertinoButton(
+                  padding: EdgeInsets.zero,
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: Text(
+                    'Done',
+                    style: TextStyle(color: CupertinoColors.systemBlue),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // 設定選項
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              children: [
+                // 深色模式
+                CupertinoListTile(
+                  title: Text(
+                    'Dark Mode',
+                    style: TextStyle(
+                      color: isDarkMode ? CupertinoColors.white : CupertinoColors.black,
+                    ),
+                  ),
+                  trailing: CupertinoSwitch(
+                    value: isDarkMode,
+                    onChanged: (value) => onToggleTheme(),
+                  ),
+                ),
+                
+                const SizedBox(height: 20),
+                
+                // 實驗追蹤模式
+                CupertinoListTile(
+                  title: Text(
+                    'Experiment Tracking',
+                    style: TextStyle(
+                      color: isDarkMode ? CupertinoColors.white : CupertinoColors.black,
+                    ),
+                  ),
+                  subtitle: Text(
+                    'Track which reagents have been added',
+                    style: TextStyle(
+                      color: CupertinoColors.secondaryLabel,
+                    ),
+                  ),
+                  trailing: CupertinoSwitch(
+                    value: isExperimentTrackingMode,
+                    onChanged: (value) => onToggleExperimentTracking(),
+                  ),
+                ),
+                
+                if (isExperimentTrackingMode) ...[
+                  const SizedBox(height: 16),
+                  Text(
+                    'Tracking Display Mode',
+                    style: TextStyle(
+                      color: isDarkMode ? CupertinoColors.white : CupertinoColors.black,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  CupertinoSlidingSegmentedControl<int>(
+                    groupValue: trackingDisplayMode,
+                    children: const {
+                      0: Text('Checkbox'),
+                      1: Text('Strikethrough'),
+                    },
+                    onValueChanged: (int? value) {
+                      if (value != null) {
+                        onSetTrackingDisplayMode(value);
+                      }
+                    },
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// Configuration Selector
 class ConfigurationSelector extends StatefulWidget {
   final List<PcrConfiguration> initialConfigs;
   final Function(PcrConfiguration) onConfigurationSelected;
@@ -3318,145 +3443,6 @@ class _ConfigurationSelectorState extends State<ConfigurationSelector> {
                       );
                     },
                   ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class SettingsPage extends StatelessWidget {
-  final bool isDarkMode;
-  final VoidCallback onToggleTheme;
-  final bool isExperimentTrackingMode;
-  final VoidCallback onToggleExperimentTracking;
-  final int trackingDisplayMode;
-  final Function(int) onSetTrackingDisplayMode;
-
-  const SettingsPage({
-    super.key,
-    required this.isDarkMode,
-    required this.onToggleTheme,
-    required this.isExperimentTrackingMode,
-    required this.onToggleExperimentTracking,
-    required this.trackingDisplayMode,
-    required this.onSetTrackingDisplayMode,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.6,
-      decoration: BoxDecoration(
-        color: isDarkMode 
-            ? CupertinoColors.systemGrey6.darkColor
-            : CupertinoColors.systemBackground,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      child: Column(
-        children: [
-          // 頂部拖動條
-          Container(
-            width: 36,
-            height: 5,
-            margin: const EdgeInsets.symmetric(vertical: 12),
-            decoration: BoxDecoration(
-              color: CupertinoColors.quaternaryLabel,
-              borderRadius: BorderRadius.circular(2.5),
-            ),
-          ),
-          // 標題
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Settings',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                    color: isDarkMode ? CupertinoColors.white : CupertinoColors.black,
-                  ),
-                ),
-                CupertinoButton(
-                  padding: EdgeInsets.zero,
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: Text(
-                    'Done',
-                    style: TextStyle(color: CupertinoColors.systemBlue),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // 設定選項
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              children: [
-                // 深色模式
-                CupertinoListTile(
-                  title: Text(
-                    'Dark Mode',
-                    style: TextStyle(
-                      color: isDarkMode ? CupertinoColors.white : CupertinoColors.black,
-                    ),
-                  ),
-                  trailing: CupertinoSwitch(
-                    value: isDarkMode,
-                    onChanged: (value) => onToggleTheme(),
-                  ),
-                ),
-                
-                const SizedBox(height: 20),
-                
-                // 實驗追蹤模式
-                CupertinoListTile(
-                  title: Text(
-                    'Experiment Tracking',
-                    style: TextStyle(
-                      color: isDarkMode ? CupertinoColors.white : CupertinoColors.black,
-                    ),
-                  ),
-                  subtitle: Text(
-                    'Track which reagents have been added',
-                    style: TextStyle(
-                      color: CupertinoColors.secondaryLabel,
-                    ),
-                  ),
-                  trailing: CupertinoSwitch(
-                    value: isExperimentTrackingMode,
-                    onChanged: (value) => onToggleExperimentTracking(),
-                  ),
-                ),
-                
-                if (isExperimentTrackingMode) ...[
-                  const SizedBox(height: 16),
-                  Text(
-                    'Tracking Display Mode',
-                    style: TextStyle(
-                      color: isDarkMode ? CupertinoColors.white : CupertinoColors.black,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  CupertinoSlidingSegmentedControl<int>(
-                    groupValue: trackingDisplayMode,
-                    children: const {
-                      0: Text('Checkbox'),
-                      1: Text('Strikethrough'),
-                    },
-                    onValueChanged: (int? value) {
-                      if (value != null) {
-                        onSetTrackingDisplayMode(value);
-                      }
-                    },
-                  ),
-                ],
-              ],
-            ),
           ),
         ],
       ),

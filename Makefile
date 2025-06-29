@@ -26,17 +26,17 @@ android:
 # iOS build (macOS only)
 ios:
 	@echo "Building iOS IPA..."
-	@./scripts/build_ios.sh
+	@flutter build ipa --release
 
 # macOS build (macOS only)
 macos:
 	@echo "Building macOS app..."
-	@./scripts/build_macos.sh
+	@flutter build macos --release
 
 # Web build
 web:
 	@echo "Building Web app..."
-	@./scripts/build_web.sh
+	@flutter build web --release
 
 # Clean build files
 clean:

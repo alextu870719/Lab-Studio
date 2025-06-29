@@ -50,14 +50,13 @@ make help
 # 快速建置 Android
 ./scripts/quick_build_android.sh
 
-# 建置 iOS
-./scripts/build_ios.sh
-
-# 建置 macOS
-./scripts/build_macos.sh
-
-# 建置 Web
-./scripts/build_web.sh
+# 使用 Flutter 直接建置各平台
+flutter build apk --release      # Android
+flutter build ipa --release      # iOS (需要 macOS)
+flutter build macos --release    # macOS (需要 macOS)
+flutter build web --release      # Web
+flutter build linux --release    # Linux
+flutter build windows --release  # Windows
 ```
 
 ### 方法 3: 使用 VS Code 任務

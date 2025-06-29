@@ -68,7 +68,8 @@
         {
             "label": "Build iOS",
             "type": "shell",
-            "command": "./scripts/build_ios.sh",
+            "command": "flutter",
+            "args": ["build", "ipa", "--release"],
             "group": "build",
             "presentation": {
                 "echo": true,
@@ -79,12 +80,13 @@
                 "clear": false
             },
             "problemMatcher": [],
-            "detail": "Build iOS IPA and copy to releases folder"
+            "detail": "Build iOS IPA"
         },
         {
             "label": "Build macOS",
             "type": "shell",
-            "command": "./scripts/build_macos.sh",
+            "command": "flutter",
+            "args": ["build", "macos", "--release"],
             "group": "build",
             "presentation": {
                 "echo": true,
@@ -95,12 +97,13 @@
                 "clear": false
             },
             "problemMatcher": [],
-            "detail": "Build macOS app and copy to releases folder"
+            "detail": "Build macOS app"
         },
         {
             "label": "Build Web",
             "type": "shell",
-            "command": "./scripts/build_web.sh",
+            "command": "flutter",
+            "args": ["build", "web", "--release"],
             "group": "build",
             "presentation": {
                 "echo": true,
@@ -111,7 +114,7 @@
                 "clear": false
             },
             "problemMatcher": [],
-            "detail": "Build Web app and copy to releases folder"
+            "detail": "Build Web app"
         },
         {
             "label": "Flutter Clean",

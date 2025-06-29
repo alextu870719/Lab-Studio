@@ -2648,24 +2648,27 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
                   children: [
                     // 溫度
                     if (_isEditMode)
-                      SizedBox(
-                        width: 70,
-                        child: CupertinoTextField(
-                          controller: step.tempController,
-                          keyboardType: TextInputType.number,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
+                      Flexible(
+                        flex: 1,
+                        child: Container(
+                          constraints: const BoxConstraints(maxWidth: 70),
+                          child: CupertinoTextField(
+                            controller: step.tempController,
+                            keyboardType: TextInputType.number,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
+                            ),
+                            decoration: BoxDecoration(
+                              color: widget.isDarkMode 
+                                  ? CupertinoColors.systemGrey6.darkColor
+                                  : CupertinoColors.systemBackground,
+                              borderRadius: BorderRadius.circular(4.0),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 2.0, horizontal: 6.0),
+                            suffix: Text('°C', style: TextStyle(fontSize: 10, color: CupertinoColors.secondaryLabel)),
+                            onChanged: (value) => setState(() {}),
                           ),
-                          decoration: BoxDecoration(
-                            color: widget.isDarkMode 
-                                ? CupertinoColors.systemGrey6.darkColor
-                                : CupertinoColors.systemBackground,
-                            borderRadius: BorderRadius.circular(4.0),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 2.0, horizontal: 6.0),
-                          suffix: Text('°C', style: TextStyle(fontSize: 10, color: CupertinoColors.secondaryLabel)),
-                          onChanged: (value) => setState(() {}),
                         ),
                       )
                     else
@@ -2679,24 +2682,27 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
                     const SizedBox(width: 12),
                     // 時間
                     if (_isEditMode)
-                      SizedBox(
-                        width: 80,
-                        child: CupertinoTextField(
-                          controller: step.timeController,
-                          keyboardType: TextInputType.number,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
+                      Flexible(
+                        flex: 1,
+                        child: Container(
+                          constraints: const BoxConstraints(maxWidth: 80),
+                          child: CupertinoTextField(
+                            controller: step.timeController,
+                            keyboardType: TextInputType.number,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
+                            ),
+                            decoration: BoxDecoration(
+                              color: widget.isDarkMode 
+                                  ? CupertinoColors.systemGrey6.darkColor
+                                  : CupertinoColors.systemBackground,
+                              borderRadius: BorderRadius.circular(4.0),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 2.0, horizontal: 6.0),
+                            suffix: Text('s', style: TextStyle(fontSize: 10, color: CupertinoColors.secondaryLabel)),
+                            onChanged: (value) => setState(() {}),
                           ),
-                          decoration: BoxDecoration(
-                            color: widget.isDarkMode 
-                                ? CupertinoColors.systemGrey6.darkColor
-                                : CupertinoColors.systemBackground,
-                            borderRadius: BorderRadius.circular(4.0),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 2.0, horizontal: 6.0),
-                          suffix: Text('s', style: TextStyle(fontSize: 10, color: CupertinoColors.secondaryLabel)),
-                          onChanged: (value) => setState(() {}),
                         ),
                       )
                     else

@@ -810,7 +810,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
               reagent.name + (reagent.isOptional ? ' (Optional)' : ''),
               style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
                 color: reagent.isOptional && !isIncluded 
-                    ? CupertinoColors.secondaryLabel 
+                    ? (widget.isDarkMode ? CupertinoColors.systemGrey2 : CupertinoColors.secondaryLabel)
                     : (widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
                 decoration: (widget.isExperimentTrackingMode && 
                            widget.trackingDisplayMode == 1 && 
@@ -834,7 +834,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
             textAlign: TextAlign.center,
             style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
               color: reagent.isOptional && !isIncluded 
-                  ? CupertinoColors.secondaryLabel 
+                  ? (widget.isDarkMode ? CupertinoColors.systemGrey2 : CupertinoColors.secondaryLabel)
                   : (widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
             ),
           ),
@@ -849,7 +849,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
             style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
               fontWeight: FontWeight.w600,
               color: reagent.isOptional && !isIncluded 
-                  ? CupertinoColors.secondaryLabel 
+                  ? (widget.isDarkMode ? CupertinoColors.systemGrey2 : CupertinoColors.secondaryLabel)
                   : (widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
             ),
           ),
@@ -1616,7 +1616,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                         'Components',
                         style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
                           fontWeight: FontWeight.w600,
-                          color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.secondaryLabel,
+                          color: widget.isDarkMode ? CupertinoColors.systemGrey : CupertinoColors.secondaryLabel,
                         ),
                       ),
                     ),
@@ -1627,7 +1627,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                         textAlign: TextAlign.center,
                         style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
                           fontWeight: FontWeight.w600,
-                          color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.secondaryLabel,
+                          color: widget.isDarkMode ? CupertinoColors.systemGrey : CupertinoColors.secondaryLabel,
                         ),
                       ),
                     ),
@@ -1638,7 +1638,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                         textAlign: TextAlign.end,
                         style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
                           fontWeight: FontWeight.w600,
-                          color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.secondaryLabel,
+                          color: widget.isDarkMode ? CupertinoColors.systemGrey : CupertinoColors.secondaryLabel,
                         ),
                       ),
                     ),
@@ -1659,7 +1659,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                         'Components',
                         style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
                           fontWeight: FontWeight.w600,
-                          color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.secondaryLabel,
+                          color: widget.isDarkMode ? CupertinoColors.systemGrey : CupertinoColors.secondaryLabel,
                         ),
                       ),
                     ),
@@ -1671,7 +1671,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                         textAlign: TextAlign.center,
                         style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
                           fontWeight: FontWeight.w600,
-                          color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.secondaryLabel,
+                          color: widget.isDarkMode ? CupertinoColors.systemGrey : CupertinoColors.secondaryLabel,
                         ),
                       ),
                     ),
@@ -1680,7 +1680,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                       'Optional',
                       style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
                         fontWeight: FontWeight.w600,
-                        color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.secondaryLabel,
+                        color: widget.isDarkMode ? CupertinoColors.systemGrey : CupertinoColors.secondaryLabel,
                       ),
                     ),
                   ],
@@ -2478,7 +2478,7 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
                             'Cycles: ',
                             style: TextStyle(
                               fontSize: 14,
-                              color: CupertinoColors.secondaryLabel,
+                              color: widget.isDarkMode ? CupertinoColors.systemGrey2 : CupertinoColors.secondaryLabel,
                             ),
                           ),
                           if (_isEditMode)
@@ -2666,7 +2666,7 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
                               borderRadius: BorderRadius.circular(4.0),
                             ),
                             padding: const EdgeInsets.symmetric(vertical: 2.0, horizontal: 6.0),
-                            suffix: Text('°C', style: TextStyle(fontSize: 10, color: CupertinoColors.secondaryLabel)),
+                            suffix: Text('°C', style: TextStyle(fontSize: 10, color: widget.isDarkMode ? CupertinoColors.systemGrey2 : CupertinoColors.secondaryLabel)),
                             onChanged: (value) => setState(() {}),
                           ),
                         ),
@@ -2676,7 +2676,7 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
                         '${step.tempController.text}°C',
                         style: TextStyle(
                           fontSize: 12,
-                          color: CupertinoColors.secondaryLabel,
+                          color: widget.isDarkMode ? CupertinoColors.systemGrey2 : CupertinoColors.secondaryLabel,
                         ),
                       ),
                     const SizedBox(width: 12),
@@ -2700,7 +2700,7 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
                               borderRadius: BorderRadius.circular(4.0),
                             ),
                             padding: const EdgeInsets.symmetric(vertical: 2.0, horizontal: 6.0),
-                            suffix: Text('s', style: TextStyle(fontSize: 10, color: CupertinoColors.secondaryLabel)),
+                            suffix: Text('s', style: TextStyle(fontSize: 10, color: widget.isDarkMode ? CupertinoColors.systemGrey2 : CupertinoColors.secondaryLabel)),
                             onChanged: (value) => setState(() {}),
                           ),
                         ),
@@ -2710,7 +2710,7 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
                         _formatTime(int.tryParse(step.timeController.text) ?? 0),
                         style: TextStyle(
                           fontSize: 12,
-                          color: CupertinoColors.secondaryLabel,
+                          color: widget.isDarkMode ? CupertinoColors.systemGrey2 : CupertinoColors.secondaryLabel,
                         ),
                       ),
                   ],
@@ -3099,7 +3099,7 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
         subtitle: Text(
           subtitle,
           style: TextStyle(
-            color: CupertinoColors.secondaryLabel,
+            color: widget.isDarkMode ? CupertinoColors.systemGrey2 : CupertinoColors.secondaryLabel,
           ),
         ),
         trailing: Icon(
@@ -3211,7 +3211,7 @@ class SettingsPage extends StatelessWidget {
                   subtitle: Text(
                     'Track which reagents have been added',
                     style: TextStyle(
-                      color: CupertinoColors.secondaryLabel,
+                      color: isDarkMode ? CupertinoColors.systemGrey2 : CupertinoColors.secondaryLabel,
                     ),
                   ),
                   trailing: CupertinoSwitch(
@@ -3399,7 +3399,7 @@ class _ConfigurationSelectorState extends State<ConfigurationSelector> {
                     child: Text(
                       'No saved configurations',
                       style: TextStyle(
-                        color: CupertinoColors.secondaryLabel,
+                        color: widget.isDarkMode ? CupertinoColors.systemGrey2 : CupertinoColors.secondaryLabel,
                         fontSize: 16,
                       ),
                     ),
@@ -3421,7 +3421,7 @@ class _ConfigurationSelectorState extends State<ConfigurationSelector> {
                           subtitle: Text(
                             '${config.numReactions} reactions, ${config.reactionVolume}µl',
                             style: TextStyle(
-                              color: CupertinoColors.secondaryLabel,
+                              color: widget.isDarkMode ? CupertinoColors.systemGrey2 : CupertinoColors.secondaryLabel,
                             ),
                           ),
                           trailing: Row(

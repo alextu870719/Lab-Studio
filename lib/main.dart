@@ -106,7 +106,7 @@ class Reagent {
     bool? isOptional,
   }) {
     return Reagent(
-      id: this.id,  // 保持相同的 ID
+      id: id,  // 保持相同的 ID
       name: name ?? this.name,
       proportion: proportion ?? this.proportion,
       isOptional: isOptional ?? this.isOptional,
@@ -200,8 +200,9 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
   final TextEditingController _numReactionsController = TextEditingController();
   final TextEditingController _customReactionVolumeController = TextEditingController(text: '50.0');
   final TextEditingController _templateDnaVolumeController = TextEditingController(text: '0.0');
+  final TextEditingController _experimentNameController = TextEditingController();
 
-  Map<String, double> _calculatedTotalVolumes = {};
+  final Map<String, double> _calculatedTotalVolumes = {};
   final Map<String, bool> _reagentInclusionStatus = {};
   final Map<String, bool> _reagentAddedStatus = {}; // 追蹤哪些試劑已加入實驗
   bool _isEditMode = false;
@@ -219,8 +220,8 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
   ];
 
   // Controllers for edit mode to prevent focus loss
-  List<TextEditingController> _reagentNameControllers = [];
-  List<TextEditingController> _reagentVolumeControllers = [];
+  final List<TextEditingController> _reagentNameControllers = [];
+  final List<TextEditingController> _reagentVolumeControllers = [];
   
   // Timer for debouncing input updates
   Timer? _debounceTimer;
@@ -281,7 +282,13 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
     _numReactionsController.dispose();
     _customReactionVolumeController.dispose();
     _templateDnaVolumeController.dispose();
+    _experimentNameController.dispose();
     super.dispose();
+  }
+
+  String _getTodayDate() {
+    final now = DateTime.now();
+    return '${now.month.toString().padLeft(2, '0')}/${now.day.toString().padLeft(2, '0')}/${(now.year % 100).toString().padLeft(2, '0')}';
   }
 
   void _calculateVolumes() {
@@ -418,6 +425,7 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
     _numReactionsController.clear();
     _customReactionVolumeController.text = '50.0';
     _templateDnaVolumeController.clear();
+    _experimentNameController.clear();
     
     // Reset edit controllers to match reagent values
     for (int i = 0; i < _reagents.length && i < _reagentNameControllers.length; i++) {
@@ -639,6 +647,14 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
 
     final StringBuffer buffer = StringBuffer();
     buffer.writeln('Lab Studio - PCR Reagent Calculation');
+    
+    // 試驗名稱和日期
+    if (_experimentNameController.text.isNotEmpty) {
+      buffer.writeln('Experiment Name: ${_experimentNameController.text}');
+    }
+    buffer.writeln('Date: ${_getTodayDate()}');
+    buffer.writeln('');
+    
     buffer.writeln('Number of Reactions: ${_numReactionsController.text}');
     buffer.writeln('Custom Reaction Volume: ${_customReactionVolumeController.text} µl');
     buffer.writeln('');
@@ -666,6 +682,13 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
             children: [
               pw.Text('Lab Studio - PCR Reagent Calculation', style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
               pw.SizedBox(height: 20),
+              // 試驗名稱和日期
+              if (_experimentNameController.text.isNotEmpty) ...[
+                pw.Text('Experiment Name: ${_experimentNameController.text}', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
+                pw.SizedBox(height: 5),
+              ],
+              pw.Text('Date: ${_getTodayDate()}', style: pw.TextStyle(fontSize: 16)),
+              pw.SizedBox(height: 15),
               pw.Text('Number of Reactions: ${_numReactionsController.text}'),
               pw.Text('Custom Reaction Volume: ${_customReactionVolumeController.text} µl'),
               pw.SizedBox(height: 20),
@@ -1080,6 +1103,48 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                       fontSize: 20,
                       color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
                     ),
+                  ),
+                  const SizedBox(height: 16),
+                  // 試驗名稱和日期行
+                  Row(
+                    children: [
+                      Expanded(
+                        flex: 2,
+                        child: CupertinoTextField(
+                          controller: _experimentNameController,
+                          placeholder: 'Experiment Name',
+                          style: TextStyle(color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
+                          placeholderStyle: TextStyle(color: CupertinoColors.placeholderText),
+                          decoration: BoxDecoration(
+                            color: widget.isDarkMode 
+                                ? CupertinoColors.systemGrey5.darkColor
+                                : CupertinoColors.tertiarySystemBackground,
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 12.0),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 12.0),
+                          decoration: BoxDecoration(
+                            color: widget.isDarkMode 
+                                ? CupertinoColors.systemGrey6.darkColor
+                                : CupertinoColors.systemGrey6,
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
+                          child: Text(
+                            _getTodayDate(),
+                            style: TextStyle(
+                              color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
+                              fontSize: 16,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 16),
                   Row(

@@ -1190,84 +1190,137 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                   size: 24,
                 ),
               ),
-              child: Row(
-                children: [
-                  // 拖拽手柄 - 只有這個區域可以觸發拖拽
-                  Draggable<int>(
-                    data: listIndex,
-                    feedback: Material(
-                      color: Colors.transparent,
-                      child: Container(
-                        width: 60,
-                        height: 60,
-                        decoration: BoxDecoration(
-                          color: widget.isDarkMode 
-                              ? CupertinoColors.systemGrey6.darkColor
-                              : CupertinoColors.systemBackground,
-                          borderRadius: BorderRadius.circular(12.0),
-                          border: Border.all(
-                            color: CupertinoColors.systemBlue,
-                            width: 2.0,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: CupertinoColors.systemBlue.withOpacity(0.4),
-                              blurRadius: 8,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: Icon(
-                          CupertinoIcons.bars,
-                          color: CupertinoColors.systemBlue,
-                          size: 24,
-                        ),
+              child: LongPressDraggable<int>(
+                data: listIndex,
+                delay: const Duration(milliseconds: 300),
+                feedback: Material(
+                  color: Colors.transparent,
+                  child: Container(
+                    width: MediaQuery.of(context).size.width - 32,
+                    decoration: BoxDecoration(
+                      color: widget.isDarkMode 
+                          ? CupertinoColors.systemGrey6.darkColor
+                          : CupertinoColors.systemBackground,
+                      borderRadius: BorderRadius.circular(12.0),
+                      border: Border.all(
+                        color: CupertinoColors.systemBlue,
+                        width: 2.0,
                       ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: CupertinoColors.systemBlue.withOpacity(0.4),
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
-                    childWhenDragging: Container(
+                    child: Padding(
                       padding: const EdgeInsets.all(16.0),
-                      child: Icon(
-                        CupertinoIcons.bars,
-                        color: CupertinoColors.secondaryLabel,
-                        size: 20,
+                      child: Row(
+                        children: [
+                          Icon(
+                            CupertinoIcons.bars,
+                            color: CupertinoColors.systemBlue,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              reagent.name,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                                color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    onDragStarted: () {
-                      HapticFeedback.mediumImpact();
-                    },
-                    onDragEnd: (details) {
-                      // 拖拽結束，可以在這裡處理
-                    },
-                    child: GestureDetector(
-                      onTap: () {
-                        HapticFeedback.lightImpact();
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.all(16.0),
-                        decoration: BoxDecoration(
+                  ),
+                ),
+                childWhenDragging: Container(
+                  decoration: BoxDecoration(
+                    color: widget.isDarkMode 
+                        ? CupertinoColors.systemGrey5.darkColor
+                        : CupertinoColors.systemGrey6,
+                    borderRadius: BorderRadius.circular(12.0),
+                  ),
+                  child: Opacity(
+                    opacity: 0.5,
+                    child: Row(
+                      children: [
+                        // 拖拽手柄指示器
+                        Container(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Icon(
+                            CupertinoIcons.bars,
+                            color: CupertinoColors.secondaryLabel,
+                            size: 20,
+                          ),
+                        ),
+                        // 試劑內容
+                        Expanded(
+                          child: Container(
+                            padding: const EdgeInsets.fromLTRB(0, 16.0, 16.0, 16.0),
+                            child: _buildEditableReagentRow(reagent, originalIndex),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                onDragStarted: () {
+                  HapticFeedback.mediumImpact();
+                },
+                onDragEnd: (details) {
+                  // 拖拽結束，可以在這裡處理
+                },
+                child: Stack(
+                  children: [
+                    // 背景拖拽區域 - 整行都可以觸發拖拽
+                    Positioned.fill(
+                      child: GestureDetector(
+                        onLongPress: () {
+                          // 長按時提供觸覺反饋，但實際拖拽由 LongPressDraggable 處理
+                          HapticFeedback.mediumImpact();
+                        },
+                        child: Container(
                           color: Colors.transparent,
-                          borderRadius: BorderRadius.circular(8.0),
-                        ),
-                        child: Icon(
-                          CupertinoIcons.bars,
-                          color: isHighlighted 
-                              ? CupertinoColors.systemBlue
-                              : (widget.isDarkMode 
-                                  ? CupertinoColors.white.withOpacity(0.7)
-                                  : CupertinoColors.systemGrey),
-                          size: 20,
                         ),
                       ),
                     ),
-                  ),
-                  // 試劑內容 - 這個區域不會觸發拖拽
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.fromLTRB(0, 16.0, 16.0, 16.0),
-                      child: _buildEditableReagentRow(reagent, originalIndex),
+                    // 實際內容
+                    Row(
+                      children: [
+                        // 拖拽手柄指示器
+                        Container(
+                          padding: const EdgeInsets.all(16.0),
+                          decoration: BoxDecoration(
+                            color: Colors.transparent,
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
+                          child: Icon(
+                            CupertinoIcons.bars,
+                            color: isHighlighted 
+                                ? CupertinoColors.systemBlue
+                                : (widget.isDarkMode 
+                                    ? CupertinoColors.white.withOpacity(0.7)
+                                    : CupertinoColors.systemGrey),
+                            size: 20,
+                          ),
+                        ),
+                        // 試劑內容
+                        Expanded(
+                          child: Container(
+                            padding: const EdgeInsets.fromLTRB(0, 16.0, 16.0, 16.0),
+                            child: _buildEditableReagentRow(reagent, originalIndex),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           );

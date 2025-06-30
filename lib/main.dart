@@ -2473,25 +2473,13 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
                         ),
                         child: Padding(
                           padding: const EdgeInsets.all(16.0),
-                          child: Row(
-                            children: [
-                              Icon(
-                                CupertinoIcons.bars,
-                                color: CupertinoColors.systemBlue,
-                                size: 20,
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  stage.nameController.text,
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w600,
-                                    color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
-                                  ),
-                                ),
-                              ),
-                            ],
+                          child: Text(
+                            stage.nameController.text,
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
+                            ),
                           ),
                         ),
                       ),
@@ -2637,12 +2625,6 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
                           padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
                           child: Row(
                             children: [
-                              Icon(
-                                CupertinoIcons.bars,
-                                color: CupertinoColors.systemBlue,
-                                size: 16,
-                              ),
-                              const SizedBox(width: 8),
                               Text(
                                 '${step.tempController.text}°C',
                                 style: TextStyle(
@@ -3155,52 +3137,11 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 編輯模式下的提示條
-          if (_isEditMode)
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
-              decoration: BoxDecoration(
-                color: CupertinoColors.systemBlue.withOpacity(0.1),
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(12.0),
-                  topRight: Radius.circular(12.0),
-                ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    CupertinoIcons.hand_point_left,
-                    size: 12,
-                    color: CupertinoColors.systemBlue,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Long press to drag',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: CupertinoColors.systemBlue,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
           // Stage 標題行
           Container(
             padding: const EdgeInsets.all(16.0),
             child: Row(
               children: [
-                // 編輯模式下顯示拖拽指示器
-                if (_isEditMode) ...[
-                  Icon(
-                    CupertinoIcons.bars,
-                    color: CupertinoColors.systemGrey,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 12),
-                ],
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -3366,15 +3307,6 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
       ),
       child: Row(
         children: [
-          // 編輯模式下顯示拖拽指示器
-          if (_isEditMode) ...[
-            Icon(
-              CupertinoIcons.bars,
-              color: CupertinoColors.systemGrey,
-              size: 16,
-            ),
-            const SizedBox(width: 8),
-          ],
           // Step 內容 - 簡化版，只顯示溫度和時間
           Expanded(
             child: Row(

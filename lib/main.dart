@@ -2387,17 +2387,20 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
                 width: 2.0,
               ) : null,
             ),
-            child: Row(
-              children: [
-                // 拖拽手柄 - 只有這個區域可以觸發拖拽
-                if (_isEditMode)
-                  Draggable<int>(
+            child: _isEditMode 
+                ? LongPressDraggable<int>(
                     data: stageIndex,
+                    delay: const Duration(milliseconds: 500), // 長按 0.5 秒後開始拖拽
+                    onDragStarted: () {
+                      HapticFeedback.mediumImpact(); // 拖拽開始時的觸覺反饋
+                    },
+                    onDragEnd: (details) {
+                      // 拖拽結束
+                    },
                     feedback: Material(
                       color: Colors.transparent,
                       child: Container(
-                        width: 60,
-                        height: 60,
+                        width: MediaQuery.of(context).size.width - 32,
                         decoration: BoxDecoration(
                           color: widget.isDarkMode 
                               ? CupertinoColors.systemGrey6.darkColor
@@ -2415,51 +2418,46 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
                             ),
                           ],
                         ),
-                        child: Icon(
-                          CupertinoIcons.bars,
-                          color: CupertinoColors.systemBlue,
-                          size: 24,
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Row(
+                            children: [
+                              Icon(
+                                CupertinoIcons.bars,
+                                color: CupertinoColors.systemBlue,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  stage.nameController.text,
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w600,
+                                    color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
                     childWhenDragging: Container(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Icon(
-                        CupertinoIcons.bars,
-                        color: CupertinoColors.secondaryLabel,
-                        size: 20,
+                      decoration: BoxDecoration(
+                        color: widget.isDarkMode 
+                            ? CupertinoColors.systemGrey5.darkColor
+                            : CupertinoColors.systemGrey6,
+                        borderRadius: BorderRadius.circular(12.0),
+                      ),
+                      child: Opacity(
+                        opacity: 0.5,
+                        child: _buildStageCard(stage, stageIndex),
                       ),
                     ),
-                    onDragStarted: () {
-                      HapticFeedback.mediumImpact();
-                    },
-                    onDragEnd: (details) {
-                      // 拖拽結束
-                    },
-                    child: GestureDetector(
-                      onTap: () {
-                        HapticFeedback.lightImpact();
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.all(8.0),
-                        decoration: BoxDecoration(
-                          color: Colors.transparent,
-                          borderRadius: BorderRadius.circular(8.0),
-                        ),
-                        child: Icon(
-                          CupertinoIcons.bars,
-                          color: CupertinoColors.systemGrey,
-                          size: 20,
-                        ),
-                      ),
-                    ),
-                  ),
-                // Stage 內容
-                Expanded(
-                  child: _buildStageCard(stage, stageIndex),
-                ),
-              ],
-            ),
+                    child: _buildStageCard(stage, stageIndex),
+                  )
+                : _buildStageCard(stage, stageIndex),
           );
         },
       ),
@@ -2551,21 +2549,24 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
                 width: 1.0,
               ) : null,
             ),
-            child: Row(
-              children: [
-                // 拖拽手柄 - 只有這個區域可以觸發拖拽
-                if (_isEditMode)
-                  Draggable<Map<String, int>>(
+            child: _isEditMode
+                ? LongPressDraggable<Map<String, int>>(
                     data: {'stageIndex': stageIndex, 'stepIndex': stepIndex},
+                    delay: const Duration(milliseconds: 500), // 長按 0.5 秒後開始拖拽
+                    onDragStarted: () {
+                      HapticFeedback.lightImpact(); // 拖拽開始時的觸覺反饋
+                    },
+                    onDragEnd: (details) {
+                      // 拖拽結束
+                    },
                     feedback: Material(
                       color: Colors.transparent,
                       child: Container(
-                        width: 40,
-                        height: 40,
+                        width: MediaQuery.of(context).size.width - 64,
                         decoration: BoxDecoration(
                           color: widget.isDarkMode 
-                              ? CupertinoColors.systemGrey6.darkColor
-                              : CupertinoColors.systemBackground,
+                              ? CupertinoColors.systemGrey5.darkColor
+                              : CupertinoColors.tertiarySystemBackground,
                           borderRadius: BorderRadius.circular(8.0),
                           border: Border.all(
                             color: CupertinoColors.systemBlue,
@@ -2579,51 +2580,53 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
                             ),
                           ],
                         ),
-                        child: Icon(
-                          CupertinoIcons.bars,
-                          color: CupertinoColors.systemBlue,
-                          size: 16,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
+                          child: Row(
+                            children: [
+                              Icon(
+                                CupertinoIcons.bars,
+                                color: CupertinoColors.systemBlue,
+                                size: 16,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                '${step.tempController.text}°C',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                  color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Text(
+                                _formatTime(TimeInputFormatter.parseTimeToSeconds(step.timeController.text)),
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                  color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
                     childWhenDragging: Container(
-                      padding: const EdgeInsets.all(4.0),
-                      child: Icon(
-                        CupertinoIcons.bars,
-                        color: CupertinoColors.secondaryLabel,
-                        size: 16,
+                      decoration: BoxDecoration(
+                        color: widget.isDarkMode 
+                            ? CupertinoColors.systemGrey4.darkColor
+                            : CupertinoColors.systemGrey5,
+                        borderRadius: BorderRadius.circular(8.0),
+                      ),
+                      child: Opacity(
+                        opacity: 0.5,
+                        child: _buildStepCard(step, stageIndex, stepIndex),
                       ),
                     ),
-                    onDragStarted: () {
-                      HapticFeedback.lightImpact();
-                    },
-                    onDragEnd: (details) {
-                      // 拖拽結束
-                    },
-                    child: GestureDetector(
-                      onTap: () {
-                        HapticFeedback.lightImpact();
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.all(4.0),
-                        decoration: BoxDecoration(
-                          color: Colors.transparent,
-                          borderRadius: BorderRadius.circular(4.0),
-                        ),
-                        child: Icon(
-                          CupertinoIcons.bars,
-                          color: CupertinoColors.systemGrey,
-                          size: 16,
-                        ),
-                      ),
-                    ),
-                  ),
-                // Step 內容
-                Expanded(
-                  child: _buildStepCard(step, stageIndex, stepIndex),
-                ),
-              ],
-            ),
+                    child: _buildStepCard(step, stageIndex, stepIndex),
+                  )
+                : _buildStepCard(step, stageIndex, stepIndex),
           );
         },
       ),
@@ -3090,18 +3093,61 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
             : CupertinoColors.systemBackground,
         borderRadius: BorderRadius.circular(12.0),
         border: Border.all(
-          color: CupertinoColors.separator,
-          width: 0.5,
+          color: _isEditMode 
+              ? CupertinoColors.systemBlue.withOpacity(0.3)
+              : CupertinoColors.separator,
+          width: _isEditMode ? 1.0 : 0.5,
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // 編輯模式下的提示條
+          if (_isEditMode)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+              decoration: BoxDecoration(
+                color: CupertinoColors.systemBlue.withOpacity(0.1),
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(12.0),
+                  topRight: Radius.circular(12.0),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    CupertinoIcons.hand_point_left,
+                    size: 12,
+                    color: CupertinoColors.systemBlue,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Long press to drag',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: CupertinoColors.systemBlue,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           // Stage 標題行
           Container(
             padding: const EdgeInsets.all(16.0),
             child: Row(
               children: [
+                // 編輯模式下顯示拖拽指示器
+                if (_isEditMode) ...[
+                  Icon(
+                    CupertinoIcons.bars,
+                    color: CupertinoColors.systemGrey,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 12),
+                ],
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -3260,10 +3306,23 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
             ? CupertinoColors.systemGrey5.darkColor
             : CupertinoColors.tertiarySystemBackground,
         borderRadius: BorderRadius.circular(8.0),
+        border: _isEditMode ? Border.all(
+          color: CupertinoColors.systemBlue.withOpacity(0.2),
+          width: 0.5,
+        ) : null,
       ),
       child: Row(
         children: [
-          // Step 內容 - 簡化版，只顯示溫度和時間（移除圖示）
+          // 編輯模式下顯示拖拽指示器
+          if (_isEditMode) ...[
+            Icon(
+              CupertinoIcons.bars,
+              color: CupertinoColors.systemGrey,
+              size: 16,
+            ),
+            const SizedBox(width: 8),
+          ],
+          // Step 內容 - 簡化版，只顯示溫度和時間
           Expanded(
             child: Row(
               children: [

@@ -734,7 +734,18 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
       ),
     );
 
-    await Printing.sharePdf(bytes: await doc.save(), filename: 'lab_studio_pcr_calculation.pdf');
+    // 統一使用列印對話框，適用於所有平台
+    try {
+      await Printing.layoutPdf(
+        onLayout: (format) async => await doc.save(),
+      );
+    } catch (e) {
+      // 如果直接列印失敗，回退到分享功能
+      await Printing.sharePdf(
+        bytes: await doc.save(), 
+        filename: 'lab_studio_pcr_calculation.pdf'
+      );
+    }
   }
 
   Widget _buildDisplayReagentRow(Reagent reagent) {
@@ -2753,7 +2764,18 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
       ),
     );
 
-    await Printing.sharePdf(bytes: await doc.save(), filename: 'lab_studio_pcr_protocol.pdf');
+    // 統一使用列印對話框，適用於所有平台
+    try {
+      await Printing.layoutPdf(
+        onLayout: (format) async => await doc.save(),
+      );
+    } catch (e) {
+      // 如果直接列印失敗，回退到分享功能
+      await Printing.sharePdf(
+        bytes: await doc.save(), 
+        filename: 'lab_studio_pcr_protocol.pdf'
+      );
+    }
   }
   
   // 保存配置

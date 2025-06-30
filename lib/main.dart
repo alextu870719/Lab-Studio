@@ -3110,7 +3110,7 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
                         CupertinoTextField(
                           controller: stage.nameController,
                           style: TextStyle(
-                            fontSize: 18,
+                            fontSize: 22, // 進一步增加字體大小
                             fontWeight: FontWeight.w600,
                             color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
                           ),
@@ -3131,7 +3131,7 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
                         Text(
                           stage.nameController.text,
                           style: TextStyle(
-                            fontSize: 18,
+                            fontSize: 22, // 進一步增加字體大小
                             fontWeight: FontWeight.w600,
                             color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
                           ),
@@ -3142,7 +3142,7 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
                           Text(
                             'Cycles: ',
                             style: TextStyle(
-                              fontSize: 14,
+                              fontSize: 18, // 進一步增加字體大小
                               color: widget.isDarkMode ? CupertinoColors.systemGrey2 : CupertinoColors.secondaryLabel,
                             ),
                           ),
@@ -3157,7 +3157,7 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
                                   FocusScope.of(context).unfocus();
                                 },
                                 style: TextStyle(
-                                  fontSize: 14,
+                                  fontSize: 18, // 進一步增加字體大小
                                   color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
                                 ),
                                 decoration: BoxDecoration(
@@ -3175,7 +3175,7 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
                             Text(
                               stage.cyclesController.text,
                               style: TextStyle(
-                                fontSize: 14,
+                                fontSize: 18, // 進一步增加字體大小
                                 fontWeight: FontWeight.w500,
                                 color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
                               ),
@@ -3215,7 +3215,7 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
     // 在編輯模式下添加左滑刪除功能
     if (_isEditMode) {
       return Container(
-        margin: const EdgeInsets.symmetric(vertical: 8.0),
+        margin: const EdgeInsets.symmetric(vertical: 2.0), // 進一步減少 Stage 間距
         child: Dismissible(
           key: ValueKey(stage.id),
           direction: DismissDirection.endToStart,
@@ -3246,7 +3246,7 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
       );
     } else {
       return Container(
-        margin: const EdgeInsets.symmetric(vertical: 8.0),
+        margin: const EdgeInsets.symmetric(vertical: 2.0), // 進一步減少 Stage 間距
         child: stageCardContent,
       );
     }
@@ -3254,7 +3254,7 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
   
   Widget _buildStepCard(EditablePcrStep step, int stageIndex, int stepIndex) {
     Widget stepCardContent = Container(
-      padding: const EdgeInsets.all(12.0),
+      padding: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 12.0), // 進一步減少上下間距
       decoration: BoxDecoration(
         color: widget.isDarkMode 
             ? CupertinoColors.systemGrey5.darkColor
@@ -3283,7 +3283,7 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
                           FocusScope.of(context).nextFocus();
                         },
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: 18, // 進一步增加字體大小
                           fontWeight: FontWeight.w500,
                           color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
                         ),
@@ -3294,7 +3294,7 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
                           borderRadius: BorderRadius.circular(6.0),
                         ),
                         padding: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 8.0),
-                        suffix: Text('°C', style: TextStyle(fontSize: 12, color: widget.isDarkMode ? CupertinoColors.systemGrey2 : CupertinoColors.secondaryLabel)),
+                        suffix: Text('°C', style: TextStyle(fontSize: 16, color: widget.isDarkMode ? CupertinoColors.systemGrey2 : CupertinoColors.secondaryLabel)), // 增加字體大小
                         // 移除 onChanged 中的 setState，避免輸入時重建導致失焦
                         // onChanged: (value) => setState(() {}),
                       ),
@@ -3304,7 +3304,7 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
                   Text(
                     '${step.tempController.text}°C',
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 18, // 進一步增加字體大小
                       fontWeight: FontWeight.w500,
                       color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
                     ),
@@ -3334,7 +3334,7 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
                           );
                         },
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: 18, // 進一步增加字體大小
                           fontWeight: FontWeight.w500,
                           color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
                         ),
@@ -3354,7 +3354,7 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
                   Text(
                     _formatTime(TimeInputFormatter.parseTimeToSeconds(step.timeController.text)),
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 18, // 進一步增加字體大小
                       fontWeight: FontWeight.w500,
                       color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
                     ),
@@ -3369,7 +3369,7 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
     // 在編輯模式下添加左滑刪除功能
     if (_isEditMode) {
       return Container(
-        margin: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 8.0),
+        margin: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 2.0), // 進一步減少底部間距
         child: Dismissible(
           key: ValueKey(step.id),
           direction: DismissDirection.endToStart,
@@ -3400,7 +3400,7 @@ class _PcrReactionPageState extends State<PcrReactionPage> {
       );
     } else {
       return Container(
-        margin: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 8.0),
+        margin: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 4.0), // 減少底部間距
         child: stepCardContent,
       );
     }

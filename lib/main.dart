@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'dart:ui';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:flutter/services.dart';
@@ -72,45 +73,77 @@ class _MyAppState extends State<MyApp> {
         brightness: _isDarkMode ? Brightness.dark : Brightness.light,
         primaryColor: CupertinoColors.systemBlue,
         scaffoldBackgroundColor: _isDarkMode 
-            ? CupertinoColors.black
-            : CupertinoColors.systemGroupedBackground,
+            ? const Color(0xFF0A0A0A)
+            : const Color(0xFFF0F2F5),
       ),
-      home: CupertinoTabScaffold(
-        tabBar: CupertinoTabBar(
-          backgroundColor: _isDarkMode 
-              ? CupertinoColors.systemGrey6.darkColor
-              : CupertinoColors.systemBackground,
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(CupertinoIcons.lab_flask),
-              label: 'Calculator',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(CupertinoIcons.gear_alt),
-              label: 'Reaction',
-            ),
-          ],
+      home: Container(
+        decoration: BoxDecoration(
+          gradient: _isDarkMode 
+              ? const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0xFF1A1A2E),
+                    Color(0xFF16213E), 
+                    Color(0xFF0F3460),
+                  ],
+                )
+              : const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0xFFE8F4FD),
+                    Color(0xFFD1E7DD),
+                    Color(0xFFB8E6B8),
+                  ],
+                ),
         ),
-        tabBuilder: (BuildContext context, int index) {
-          switch (index) {
-            case 0:
-              return PcrCalculatorPage(
-                onToggleTheme: _toggleTheme,
-                isDarkMode: _isDarkMode,
-                onToggleExperimentTracking: _toggleExperimentTracking,
-                isExperimentTrackingMode: _isExperimentTrackingMode,
-                trackingDisplayMode: _trackingDisplayMode,
-                onSetTrackingDisplayMode: _setTrackingDisplayMode,
-              );
-            case 1:
-              return PcrReactionPage(
-                isDarkMode: _isDarkMode,
-                onToggleTheme: _toggleTheme,
-              );
-            default:
-              return Container();
-          }
-        },
+        child: CupertinoTabScaffold(
+          backgroundColor: Colors.transparent,
+          tabBar: CupertinoTabBar(
+            backgroundColor: _isDarkMode 
+                ? CupertinoColors.black.withOpacity(0.4)
+                : CupertinoColors.white.withOpacity(0.4),
+            border: Border(
+              top: BorderSide(
+                color: _isDarkMode 
+                    ? CupertinoColors.white.withOpacity(0.1)
+                    : CupertinoColors.black.withOpacity(0.1),
+                width: 0.5,
+              ),
+            ),
+            items: const [
+              BottomNavigationBarItem(
+                icon: Icon(CupertinoIcons.lab_flask),
+                label: 'Calculator',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(CupertinoIcons.gear_alt),
+                label: 'Reaction',
+              ),
+            ],
+          ),
+          tabBuilder: (BuildContext context, int index) {
+            switch (index) {
+              case 0:
+                return PcrCalculatorPage(
+                  onToggleTheme: _toggleTheme,
+                  isDarkMode: _isDarkMode,
+                  onToggleExperimentTracking: _toggleExperimentTracking,
+                  isExperimentTrackingMode: _isExperimentTrackingMode,
+                  trackingDisplayMode: _trackingDisplayMode,
+                  onSetTrackingDisplayMode: _setTrackingDisplayMode,
+                );
+              case 1:
+                return PcrReactionPage(
+                  isDarkMode: _isDarkMode,
+                  onToggleTheme: _toggleTheme,
+                );
+              default:
+                return Container();
+            }
+          },
+        ),
       ),
     );
   }
@@ -1376,7 +1409,11 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
+      backgroundColor: Colors.transparent,
       navigationBar: CupertinoNavigationBar(
+        backgroundColor: widget.isDarkMode 
+            ? CupertinoColors.black.withOpacity(0.4)
+            : CupertinoColors.white.withOpacity(0.4),
         middle: Text(
           'PCR Calculator',
           style: TextStyle(color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
@@ -1408,121 +1445,191 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
           child: ListView(
           padding: const EdgeInsets.all(16.0),
           children: [
-            // Parameters Section
+            // Parameters Section with Glassmorphism
             Container(
               decoration: BoxDecoration(
-                color: widget.isDarkMode 
-                    ? CupertinoColors.systemGrey6.darkColor
-                    : CupertinoColors.systemBackground,
-                borderRadius: BorderRadius.circular(12.0),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: widget.isDarkMode 
+                      ? [
+                          const Color(0xFFFFFFFF).withOpacity(0.15),
+                          const Color(0xFFFFFFFF).withOpacity(0.05),
+                        ]
+                      : [
+                          const Color(0xFFFFFFFF).withOpacity(0.4),
+                          const Color(0xFFFFFFFF).withOpacity(0.1),
+                        ],
+                ),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: widget.isDarkMode 
+                      ? const Color(0xFFFFFFFF).withOpacity(0.2)
+                      : const Color(0xFFFFFFFF).withOpacity(0.3),
+                  width: 1.5,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: widget.isDarkMode 
+                        ? const Color(0xFF000000).withOpacity(0.3)
+                        : const Color(0xFF000000).withOpacity(0.1),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
               ),
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'PCR Parameters',
-                    style: CupertinoTheme.of(context).textTheme.navLargeTitleTextStyle.copyWith(
-                      fontSize: 20,
-                      color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  // 試驗名稱和日期行
-                  Row(
-                    children: [
-                      Expanded(
-                        flex: 2,
-                        child: CupertinoTextField(
-                          controller: _experimentNameController,
-                          placeholder: 'Experiment Name',
-                          textInputAction: TextInputAction.done,
-                          onEditingComplete: () {
-                            final currentFocus = FocusScope.of(context);
-                            if (currentFocus.hasFocus) {
-                              currentFocus.unfocus();
-                            }
-                          },
-                          style: TextStyle(color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
-                          placeholderStyle: TextStyle(color: CupertinoColors.placeholderText),
-                          decoration: BoxDecoration(
-                            color: widget.isDarkMode 
-                                ? CupertinoColors.systemGrey5.darkColor
-                                : CupertinoColors.tertiarySystemBackground,
-                            borderRadius: BorderRadius.circular(8.0),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 12.0),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 12.0),
-                          decoration: BoxDecoration(
-                            color: widget.isDarkMode 
-                                ? CupertinoColors.systemGrey6.darkColor
-                                : CupertinoColors.systemGrey6,
-                            borderRadius: BorderRadius.circular(8.0),
-                          ),
-                          child: Text(
-                            _getTodayDate(),
-                            style: TextStyle(
-                              color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
-                              fontSize: 16,
-                            ),
-                            textAlign: TextAlign.center,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                  child: Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'PCR Parameters',
+                          style: CupertinoTheme.of(context).textTheme.navLargeTitleTextStyle.copyWith(
+                            fontSize: 20,
+                            color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        const SizedBox(height: 16),
+                        // 試驗名稱和日期行
+                        Row(
                           children: [
-                            Text(
-                              'Number of Reactions',
-                              style: TextStyle(
-                                color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
+                            Expanded(
+                              flex: 2,
+                              child: CupertinoTextField(
+                                controller: _experimentNameController,
+                                placeholder: 'Experiment Name',
+                                textInputAction: TextInputAction.done,
+                                onEditingComplete: () {
+                                  final currentFocus = FocusScope.of(context);
+                                  if (currentFocus.hasFocus) {
+                                    currentFocus.unfocus();
+                                  }
+                                },
+                                style: TextStyle(color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
+                                placeholderStyle: TextStyle(color: CupertinoColors.placeholderText),
+                                decoration: BoxDecoration(
+                                  color: widget.isDarkMode 
+                                      ? CupertinoColors.systemGrey5.darkColor
+                                      : CupertinoColors.tertiarySystemBackground,
+                                  borderRadius: BorderRadius.circular(8.0),
+                                ),
+                                padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 12.0),
                               ),
                             ),
-                            const SizedBox(height: 6),
-                            CupertinoTextField(
-                              controller: _numReactionsController,
-                              placeholder: '# RXN',
-                              keyboardType: TextInputType.number,
-                              textInputAction: TextInputAction.next,
-                              onEditingComplete: () {
-                                // 安全的焦點跳轉
-                                FocusScope.of(context).nextFocus();
-                              },
-                              inputFormatters: [BankStyleIntegerFormatter(maxDigits: 3)],
-                              style: TextStyle(color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
-                              placeholderStyle: TextStyle(color: CupertinoColors.placeholderText),
-                              decoration: BoxDecoration(
-                                color: widget.isDarkMode 
-                                    ? CupertinoColors.systemGrey5.darkColor
-                                    : CupertinoColors.tertiarySystemBackground,
-                                borderRadius: BorderRadius.circular(8.0),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 12.0),
+                                decoration: BoxDecoration(
+                                  color: widget.isDarkMode 
+                                      ? CupertinoColors.systemGrey6.darkColor
+                                      : CupertinoColors.systemGrey6,
+                                  borderRadius: BorderRadius.circular(8.0),
+                                ),
+                                child: Text(
+                                  _getTodayDate(),
+                                  style: TextStyle(
+                                    color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
+                                    fontSize: 16,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
                               ),
-                              padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 12.0),
-                              onChanged: (value) => _calculateVolumes(),
                             ),
                           ],
                         ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Number of Reactions',
+                                    style: TextStyle(
+                                      color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  CupertinoTextField(
+                                    controller: _numReactionsController,
+                                    placeholder: '# RXN',
+                                    keyboardType: TextInputType.number,
+                                    textInputAction: TextInputAction.next,
+                                    onEditingComplete: () {
+                                      // 安全的焦點跳轉
+                                      FocusScope.of(context).nextFocus();
+                                    },
+                                    inputFormatters: [BankStyleIntegerFormatter(maxDigits: 3)],
+                                    style: TextStyle(color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
+                                    placeholderStyle: TextStyle(color: CupertinoColors.placeholderText),
+                                    decoration: BoxDecoration(
+                                      color: widget.isDarkMode 
+                                          ? CupertinoColors.systemGrey5.darkColor
+                                          : CupertinoColors.tertiarySystemBackground,
+                                      borderRadius: BorderRadius.circular(8.0),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 12.0),
+                                    onChanged: (value) => _calculateVolumes(),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'RXN Vol (µl)',
+                                    style: TextStyle(
+                                      color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  CupertinoTextField(
+                                    controller: _customReactionVolumeController,
+                                    placeholder: 'Volume',
+                                    keyboardType: TextInputType.number,
+                                    textInputAction: TextInputAction.next,
+                                    onEditingComplete: () {
+                                      // 安全的焦點跳轉
+                                      FocusScope.of(context).nextFocus();
+                                    },
+                                    inputFormatters: [BankStyleDecimalFormatter(decimalPlaces: 1, maxDigits: 5)],
+                                    style: TextStyle(color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
+                                    placeholderStyle: TextStyle(color: CupertinoColors.placeholderText),
+                                    decoration: BoxDecoration(
+                                      color: widget.isDarkMode 
+                                          ? CupertinoColors.systemGrey5.darkColor
+                                          : CupertinoColors.tertiarySystemBackground,
+                                      borderRadius: BorderRadius.circular(8.0),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 12.0),
+                                    onChanged: (value) => _calculateVolumes(),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'RXN Vol (µl)',
+                              'Template DNA Vol (µl)',
                               style: TextStyle(
                                 color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
                                 fontSize: 14,
@@ -1531,13 +1638,15 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                             ),
                             const SizedBox(height: 6),
                             CupertinoTextField(
-                              controller: _customReactionVolumeController,
-                              placeholder: 'Volume',
+                              controller: _templateDnaVolumeController,
+                              placeholder: 'Template Volume',
                               keyboardType: TextInputType.number,
-                              textInputAction: TextInputAction.next,
+                              textInputAction: TextInputAction.done,
                               onEditingComplete: () {
-                                // 安全的焦點跳轉
-                                FocusScope.of(context).nextFocus();
+                                final currentFocus = FocusScope.of(context);
+                                if (currentFocus.hasFocus) {
+                                  currentFocus.unfocus();
+                                }
                               },
                               inputFormatters: [BankStyleDecimalFormatter(decimalPlaces: 1, maxDigits: 5)],
                               style: TextStyle(color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
@@ -1553,82 +1662,44 @@ class _PcrCalculatorPageState extends State<PcrCalculatorPage> {
                             ),
                           ],
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: CupertinoButton.filled(
+                                onPressed: _clearAllInputs,
+                                child: Text(
+                                  'Clear',
+                                  style: TextStyle(color: CupertinoColors.white),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: CupertinoButton.filled(
+                                onPressed: _printResults,
+                                child: Text(
+                                  'Print',
+                                  style: TextStyle(color: CupertinoColors.white),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: CupertinoButton.filled(
+                                onPressed: _copyResults,
+                                child: Text(
+                                  'Copy',
+                                  style: TextStyle(color: CupertinoColors.white),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 16),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Template DNA Vol (µl)',
-                        style: TextStyle(
-                          color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      CupertinoTextField(
-                        controller: _templateDnaVolumeController,
-                        placeholder: 'Template Volume',
-                        keyboardType: TextInputType.number,
-                        textInputAction: TextInputAction.done,
-                        onEditingComplete: () {
-                          final currentFocus = FocusScope.of(context);
-                          if (currentFocus.hasFocus) {
-                            currentFocus.unfocus();
-                          }
-                        },
-                        inputFormatters: [BankStyleDecimalFormatter(decimalPlaces: 1, maxDigits: 5)],
-                        style: TextStyle(color: widget.isDarkMode ? CupertinoColors.white : CupertinoColors.black),
-                        placeholderStyle: TextStyle(color: CupertinoColors.placeholderText),
-                        decoration: BoxDecoration(
-                          color: widget.isDarkMode 
-                              ? CupertinoColors.systemGrey5.darkColor
-                              : CupertinoColors.tertiarySystemBackground,
-                          borderRadius: BorderRadius.circular(8.0),
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 12.0),
-                        onChanged: (value) => _calculateVolumes(),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: CupertinoButton.filled(
-                          onPressed: _clearAllInputs,
-                          child: Text(
-                            'Clear',
-                            style: TextStyle(color: CupertinoColors.white),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: CupertinoButton.filled(
-                          onPressed: _printResults,
-                          child: Text(
-                            'Print',
-                            style: TextStyle(color: CupertinoColors.white),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: CupertinoButton.filled(
-                          onPressed: _copyResults,
-                          child: Text(
-                            'Copy',
-                            style: TextStyle(color: CupertinoColors.white),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+                ),
               ),
             ),
             const SizedBox(height: 16),

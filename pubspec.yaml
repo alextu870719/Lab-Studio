@@ -39,6 +39,7 @@ dependencies:
   path_provider: ^2.1.3
   numberpicker: ^2.1.2
   shared_preferences: ^2.2.2
+  glassmorphism: ^3.0.0
 
 dev_dependencies:
   flutter_test:

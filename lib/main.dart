@@ -107,8 +107,8 @@ class _MyAppState extends State<MyApp> {
             border: Border(
               top: BorderSide(
                 color: _isDarkMode 
-                    ? CupertinoColors.white.withOpacity(0.1)
-                    : CupertinoColors.black.withOpacity(0.1),
+                    ? CupertinoColors.white.withOpacity(0.2)
+                    : CupertinoColors.black.withOpacity(0.2),
                 width: 0.5,
               ),
             ),
